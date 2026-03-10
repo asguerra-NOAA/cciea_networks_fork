@@ -43,14 +43,17 @@ Make sure to define filenames and networkstats_filename so that the date is asso
 
 <br>
 ```{r "setup", include=FALSE}
-if(!require("here")) {install.packages("here")}
+if (!require("here")) {
+  install.packages("here")
+}
 library(here)
 knitr::opts_chunk$set(echo = TRUE)
 knitr::opts_knit$set(root.dir = here::here())
 
 ## start time for full script
 script_start_time <- Sys.time()
-```
+``
+`
 <br>
 
 This script requires the following packages. 
@@ -65,13 +68,14 @@ if(!require("gridExtra")) {install.packages("gridExtra")}
 if(!require("ggpubr")) {install.packages("ggpubr")}
 if(!require("cowplot")) {install.packages("cowplot")}
 if(!require("viridis")) {install.packages("viridis")}
-if(!require("PNWColors")) {devtools::install_github("jakelawler/PNWColors"); library(PNWColors)}
-```
+if(!require("PNWColors")) {devtools::install_github("jakelawlor/PNWColors"); library(PNWColors)}
+`
+``
 <br>
 
 Select your directories.
 ```{r}
-## directory with network statistics 
+## directory with network statistics
 indir <- 'results/statistics'
 
 ## directory with other input data
@@ -79,7 +83,8 @@ other_indir <- 'data/input'
 
 ## directory to save figures
 pngdir <- 'results/figures'
-```
+``
+`
 <br>
 
 What are the names of the `.csv` files with the network statistics that you want to compare? Would not suggest listing more than 4. Files should all be in the input directory (`indir`) specified above.
@@ -90,27 +95,31 @@ filenames <- "VesselLevelNodeStats_2004_2025_21pcgroups_totalrev7873.43337267464
 networkstats_filename <- c("VesselLevelNetworkStats_2004_2025_21pcgroups_totalrev7873.43337267464_indivrev787.343337267464_connectivity_rmCrab_10pContribution_2026-01-15.csv")
 # hci_filename <- 'ei_hci_rgn1_M.csv'
 port_filename <- 'iopac_conversion_table.csv'
-```
+`
+``
 <br>
 
 Provide descriptive names to differentiate the datasets drawn from the files listed above. 
 ```{r}
 dataset_names <- c("Node_Stats")
 dataset_names2 <- c("Network_Stats")
-```
+``
+`
 <br>
 
 Specify which network metrics to retain from the full data set.
 ```{r}
 node_metrics <- c('node_strength','eigen')
 network_metrics <- c('ed', 'N') # ,'ed_weighted'
-```
+`
+``
 <br>
 
 Specify which fisheries to retain from the full data set.
 ```{r}
-myfisheries <- c('Salmon','Non-DTS groundfish', 'DTS groundfish')
-```
+myfisheries <- c('Salmon', 'Non-DTS groundfish', 'DTS groundfish')
+``
+`
 <br>
 
 <!-- Specify which port groups to retain from the full data set. -->
@@ -155,13 +164,15 @@ glimpse(dat2)
 # 01-06-22: note jameal updated OSD, SD, and SDA ports to have the same lat long as OCN. Amanda P has made the same fix. Also reassigned MCR to the Eureka IOPAC port group,  Amanda P agreed with this change
 iopac_lookup <- read_csv(here::here(other_indir, port_filename))
 
-```
+`
+``
 <br>
 
 Check to make sure that all of the datasets were read in. 
 ```{r echo=FALSE}
-with(dat,table(dataset,pcgroup))
-```
+with(dat, table(dataset, pcgroup))
+``
+`
 <br>
 
 Pivot longer to graph multiple metrics at once.
@@ -171,27 +182,37 @@ dat_long <- dat %>%
 
 dat2_long <- dat2 %>%
   pivot_longer(cols=c(all_of(network_metrics)), names_to = "metric", values_to = "value")
-```
+`
+``
 <br>
 
 Clean up metric names.
 ```{r}
-dat_long$metric <- recode(dat_long$metric, 
-                          node_strength = "Node Strength",
-                          eigen = "Importance")
+dat_long$metric <- recode(
+  dat_long$metric,
+  node_strength = "Node Strength",
+  eigen = "Importance"
+)
 #dat_long$metric <- factor(dat_long$metric, levels=c("Size", "Edge Density","Mean Degree", "Central.", "Central. (UnW)", "Mod.", "Mod. (UnW)"))
 
 #dat_long$pcgroup <- factor(dat_long$pcgroup, levels=myports)
 
 colnames(dat2) <- c(
-  'Port Group','Year','Edge Density','N','dataset'
+  'Port Group',
+  'Year',
+  'Edge Density',
+  'N',
+  'dataset'
 )
 
-dat2_long$metric <- recode(dat2_long$metric, 
-                          'ed' = 'edge density',
-                          'N' = 'number of fisheries')
+dat2_long$metric <- recode(
+  dat2_long$metric,
+  'ed' = 'edge density',
+  'N' = 'number of fisheries'
+)
 
-```
+``
+`
 <br>
 
 convert to ESR format
@@ -234,7 +255,8 @@ dat_esr <- dat_esr1 %>% bind_rows(dat_esr2) %>%
 
 write.csv(dat_esr,here::here(indir, paste0('FPN_ed_n_ns_ec_salmon_nondts_dts_FY2026_',Sys.Date(),".csv")), row.names=FALSE)
 
-```
+`
+``
 <br>
 
 <!-- Monthly Habitat Compression Index over 43.5-48N (Region 1). Summarize for spring months only (Apr-Jun). -->
@@ -263,9 +285,10 @@ write.csv(dat_esr,here::here(indir, paste0('FPN_ed_n_ns_ec_salmon_nondts_dts_FY2
 ... at WA and OR ports from 2004-2025. Node strength was derived from vessel-level networks summarized at the port level. Nodes (fisheries) are included in each network with a minimum total fisheries revenue cutoff for vessels of `$5,000` (USD in 2005; following Holland et al. diversification indices) and a minimum revenue cutoff for individual fisheries of `$500` (USD in 2005; following Holland et al. diversification indices).
 
 ```{r}
-plot_metric="Node Strength"
-metric_label="Node Strength"
-```
+plot_metric = "Node Strength"
+metric_label = "Node Strength"
+``
+`
 <br>
 
 ```{r echo=FALSE, fig.width=10}
@@ -351,18 +374,27 @@ figx_salmon <- ggplot(plotdat_salmon, aes(x=year, y=value, color=pcgroup)) +
   theme(legend.position = 'none')
 figx_salmon
 
-```
+`
+``
 <br>
 <br>
 <br>
 
 Save plot as a png, with filename: Node Strength of Non-DTS Groundfish in Fisheries Participation Networks 2004-2025
 ```{r echo=FALSE}
-png(here::here(pngdir, "Node Strength of Non-DTS Groundfish in Fisheries Participation Networks 2004-2025.png"),
-    res=200,height=1500,width=1700)
+png(
+  here::here(
+    pngdir,
+    "Node Strength of Non-DTS Groundfish in Fisheries Participation Networks 2004-2025.png"
+  ),
+  res = 200,
+  height = 1500,
+  width = 1700
+)
 figx_nondtsgfish
 dev.off()
-```
+``
+`
 <br>
 
 Save plot as a png, with filename: Node Strength of DTS Groundfish in Fisheries Participation Networks 2004-2025
@@ -380,7 +412,8 @@ png(here::here(pngdir, "Node Strength of Salmon in Fisheries Participation Netwo
     res=200,height=1500,width=1700)
 figx_salmon
 dev.off()
-```
+`
+``
 <br>
 
 ## Figure y.Time series of importance
@@ -388,9 +421,10 @@ dev.off()
 ... at WA and OR ports from 2004-2025. Importance (eigenvalue centrality) was derived from vessel-level networks summarized at the port level. Nodes (fisheries) are included in each network with a minimum total fisheries revenue cutoff for vessels of `$5,000` (USD in 2005; following Holland et al. diversification indices) and a minimum revenue cutoff for individual fisheries of `$500` (USD in 2005; following Holland et al. diversification indices).
 
 ```{r}
-plot_metric="Importance"
-metric_label="Importance"
-```
+plot_metric = "Importance"
+metric_label = "Importance"
+``
+`
 <br>
 
 ```{r echo=FALSE, fig.width=10}
@@ -479,18 +513,27 @@ figy_salmon <- ggplot(plotdat_salmon, aes(x=year, y=value, color=pcgroup)) +
                      panel.grid.minor=element_blank()) + 
   theme(legend.position = 'none')
 figy_salmon
-```
+`
+``
 <br>
 <br>
 <br>
 
 Save plot as a png, with filename: Importance of Non-DTS Groundfish in Fisheries Participation Networks 2004-2025
 ```{r echo=FALSE}
-png(here::here(pngdir, "Importance of Non-DTS Groundfish in Fisheries Participation Networks 2004-2025.png"),
-    res=200,height=1500,width=1700)
+png(
+  here::here(
+    pngdir,
+    "Importance of Non-DTS Groundfish in Fisheries Participation Networks 2004-2025.png"
+  ),
+  res = 200,
+  height = 1500,
+  width = 1700
+)
 figy_nondtsgfish
 dev.off()
-```
+``
+`
 <br>
 
 Save plot as a png, with filename: Importance of DTS Groundfish in Fisheries Participation Networks 2004-2025
@@ -507,7 +550,8 @@ png(here::here(pngdir, "Importance of Salmon in Fisheries Participation Networks
     res=200,height=1500,width=1700)
 figy_salmon
 dev.off()
-```
+`
+``
 <br>
 
 
@@ -558,24 +602,55 @@ dev.off()
 (Drop Other Coastal Washington & Unknown Ports & Columbia River)
 
 ```{r}
-plot_metric="Edge Density"
-metric_label="Edge Density"
-```
+plot_metric = "Edge Density"
+metric_label = "Edge Density"
+``
+`
 <br>
 
 ```{r echo=FALSE, fig.width=10}
 
 iopac_mean_lat <- iopac_lookup %>% dplyr::select(IOPAC, PACFIN_LAT) %>% group_by(IOPAC) %>% summarise(mean_lat = mean(PACFIN_LAT, na.rm=TRUE)) %>% ungroup() %>% arrange(-mean_lat) %>% dplyr::select(IOPAC) %>% pull() 
 
-# allports_sorted <- dat2 %>% left_join(iopac_mean_lat, by = c('Port Group' = 'IOPAC')) %>% dplyr::select(`Port Group`, mean_lat) %>% arrange(-mean_lat) %>% select(`Port Group`) %>% pull() # use arrange(-lat) if coord_flip() is NOT used
+# allports_sorted <- dat2 %>% left_join(iopac_mean_lat, by = c('Port Group' = 'IOPAC')) %>% dplyr::select(`
+Port
+Group
+`, mean_lat) %>% arrange(-mean_lat) %>% select(`
+Port
+Group
+`) %>% pull() # use arrange(-lat) if coord_flip() is NOT used
 
-dat2$`Port Group` <- factor(dat2$`Port Group`, levels=iopac_mean_lat)
+dat2$`
+Port
+Group
+` <- factor(dat2$`
+Port
+Group
+`, levels=iopac_mean_lat)
 
 # main metric plot
-fig_ed <- ggplot(dat2 %>% filter( `Port Group` != "Other Coastal Washington" & `Port Group` != "Unknown Ports" & `Port Group` != "Columbia River"), 
-                 aes(x=Year+1, y=`Edge Density`, colour=`Port Group`)) + 
+fig_ed <- ggplot(dat2 %>% filter( `
+Port
+Group
+` != "Other Coastal Washington" & `
+Port
+Group
+` != "Unknown Ports" & `
+Port
+Group
+` != "Columbia River"), 
+                 aes(x=Year+1, y=`
+Edge
+Density
+`, colour=`
+Port
+Group
+`)) + 
   geom_point(size=2) + geom_line() +
-  facet_wrap(vars(`Port Group`),labeller = label_wrap_gen(16)) +
+  facet_wrap(vars(`
+Port
+Group
+`),labeller = label_wrap_gen(16)) +
   scale_colour_viridis(discrete = TRUE) +
   scale_x_continuous(breaks=seq(min(dat2$Year)+1, max(dat2$Year)+1, by=2), labels=seq(min(dat2$Year)+1, max(dat2$Year)+1, by=2)) +
   ylim(c(0,1)) +
@@ -593,18 +668,32 @@ fig_ed <- ggplot(dat2 %>% filter( `Port Group` != "Other Coastal Washington" & `
                      panel.grid.minor=element_blank()) + 
   theme(legend.position = 'none')
 fig_ed
-```
+`
+``
 <br>
 <br>
 <br>
 
 Save plot as a png, with filename: Edge Density in Fisheries Participation Networks 2005-2024
 ```{r echo=FALSE}
-png(here::here(pngdir, paste0("Edge Density in Fisheries Participation Networks 2005-2025","_",Sys.Date(),".png")),
-    res=200,height=1500,width=1700)
+png(
+  here::here(
+    pngdir,
+    paste0(
+      "Edge Density in Fisheries Participation Networks 2005-2025",
+      "_",
+      Sys.Date(),
+      ".png"
+    )
+  ),
+  res = 200,
+  height = 1500,
+  width = 1700
+)
 fig_ed
 dev.off()
-```
+``
+`
 <br>
 
 ## Figure bb. Time series of number of nodes
@@ -616,40 +705,58 @@ dev.off()
 ```{r}
 plot_metric="N"
 metric_label="Number of fisheries"
-```
+`
+``
 <br>
 
 ```{r echo=FALSE, fig.width=10}
 
-# iopac_mean_lat <- iopac_lookup %>% dplyr::select(IOPAC, PACFIN_LAT) %>% group_by(IOPAC) %>% summarise(mean_lat = mean(PACFIN_LAT, na.rm=TRUE)) %>% ungroup() %>% arrange(-mean_lat) %>% dplyr::select(IOPAC) %>% pull() 
+# iopac_mean_lat <- iopac_lookup %>% dplyr::select(IOPAC, PACFIN_LAT) %>% group_by(IOPAC) %>% summarise(mean_lat = mean(PACFIN_LAT, na.rm=TRUE)) %>% ungroup() %>% arrange(-mean_lat) %>% dplyr::select(IOPAC) %>% pull()
 
 # allports_sorted <- dat2 %>% left_join(iopac_mean_lat, by = c('Port Group' = 'IOPAC')) %>% dplyr::select(`Port Group`, mean_lat) %>% arrange(-mean_lat) %>% select(`Port Group`) %>% pull() # use arrange(-lat) if coord_flip() is NOT used
 
 # dat2$`Port Group` <- factor(dat2$`Port Group`, levels=iopac_mean_lat)
 
 # main metric plot
-fig_n <- ggplot(dat2 %>% filter( `Port Group` != "Other Coastal Washington" & `Port Group` != "Unknown Ports" & `Port Group` != "Columbia River"), 
-                 aes(x=Year+1, y=N, colour=`Port Group`)) + 
-  geom_point(size=2) + geom_line() +
-  facet_wrap(vars(`Port Group`),labeller = label_wrap_gen(16)) +
+fig_n <- ggplot(
+  dat2 %>%
+    filter(
+      `Port Group` != "Other Coastal Washington" &
+        `Port Group` != "Unknown Ports" &
+        `Port Group` != "Columbia River"
+    ),
+  aes(x = Year + 1, y = N, colour = `Port Group`)
+) +
+  geom_point(size = 2) +
+  geom_line() +
+  facet_wrap(vars(`Port Group`), labeller = label_wrap_gen(16)) +
   scale_colour_viridis(discrete = TRUE) +
-  scale_x_continuous(breaks=seq(min(dat2$Year), max(dat2$Year), by=2), labels=seq(min(dat2$Year), max(dat2$Year), by=2)) +
+  scale_x_continuous(
+    breaks = seq(min(dat2$Year), max(dat2$Year), by = 2),
+    labels = seq(min(dat2$Year), max(dat2$Year), by = 2)
+  ) +
   #ylim(c(0,1)) +
-  labs(title='Number of Fisheries in Fisheries Participation Networks',
-       subtitle = '2004-2025',
-       x = "Year",
-       y = metric_label
-       ) +
-  theme_bw() + theme(axis.text.x=element_text(angle=90,hjust=1,vjust=0.5),
-                     axis.title.x=element_text(size=13),
-                     axis.title.y=element_text(size=13),
-                     strip.text=element_text(size=13),
-                     legend.title=element_text(size=13),legend.text=element_text(size=13),
-                     panel.grid.major=element_blank(),
-                     panel.grid.minor=element_blank()) + 
+  labs(
+    title = 'Number of Fisheries in Fisheries Participation Networks',
+    subtitle = '2004-2025',
+    x = "Year",
+    y = metric_label
+  ) +
+  theme_bw() +
+  theme(
+    axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5),
+    axis.title.x = element_text(size = 13),
+    axis.title.y = element_text(size = 13),
+    strip.text = element_text(size = 13),
+    legend.title = element_text(size = 13),
+    legend.text = element_text(size = 13),
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank()
+  ) +
   theme(legend.position = 'none')
 fig_n
-```
+``
+`
 <br>
 <br>
 <br>
@@ -660,7 +767,8 @@ png(here::here(pngdir, paste0("Number of Nodes in Fisheries Participation Networ
     res=200,height=1500,width=1700)
 fig_n
 dev.off()
-```
+`
+``
 <br>
 
 

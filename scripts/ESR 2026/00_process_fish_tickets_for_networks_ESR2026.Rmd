@@ -104,7 +104,7 @@ Select your directories.
 indir2 <- "/Users/ana.guerra/Documents/CONFIDENTIAL/data/PacFIN Tickets/"
 
 ## output directory for confidential data
-out_conf_dir <- "/Users/ana.guerra/Documents/CONFIDENTIAL/Outputs/CCIEA Networks"
+out_conf_dir <- "/Users/ana.guerra/Documents/CONFIDENTIAL/Outputs/CCIEA Networks/"
 
 ## output directory for processed fish tickets. not confidential
 processdir <- "data/input"
