@@ -35,27 +35,41 @@ Additional Resources:
 ```{r "setup", include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 
-if(!require("here")) {install.packages("here")}
-if(!require("tidyverse")) {install.packages("tidyverse")}
-if(!require("foreign")) {install.packages("foreign")}
-if(!require("lubridate")) {install.packages("lubridate")}
-if(!require("magrittr")) {install.packages("magrittr")}
-if(!require("fredr")) {install.packages("fredr")}
-if(!require("pak")) {
+if (!require("here")) {
+  install.packages("here")
+}
+if (!require("tidyverse")) {
+  install.packages("tidyverse")
+}
+if (!require("foreign")) {
+  install.packages("foreign")
+}
+if (!require("lubridate")) {
+  install.packages("lubridate")
+}
+if (!require("magrittr")) {
+  install.packages("magrittr")
+}
+if (!require("fredr")) {
+  install.packages("fredr")
+}
+if (!require("pak")) {
   install.packages("pak")
   pak::pak("keyring")
-  }
+}
 
 ## start time for full script
 script_start_time <- Sys.time()
 
 # ggplot theme
-plot_theme <-   theme_minimal()+
-  theme(text=element_text(family="sans",size=12,color="black"),
-        legend.text = element_text(size=14),
-        axis.title=element_text(family="sans",size=14,color="black"),
-        axis.text=element_text(family="sans",size=8,color="black"),
-        panel.grid.major = element_line(color="gray50",linetype=3))
+plot_theme <- theme_minimal() +
+  theme(
+    text = element_text(family = "sans", size = 12, color = "black"),
+    legend.text = element_text(size = 14),
+    axis.title = element_text(family = "sans", size = 14, color = "black"),
+    axis.text = element_text(family = "sans", size = 8, color = "black"),
+    panel.grid.major = element_line(color = "gray50", linetype = 3)
+  )
 theme_set(plot_theme)
 ```
 
@@ -83,17 +97,19 @@ And calls the following functions.
 # User Inputs 
 
 Select your directories. 
+
 ```{r get_dir}
 ## raw PacFIN fish ticket data file location
 #indir1 <- "/Users/jameal.samhouri/Documents/Koehn et al. cc vulnerability/Data/"
-indir2 <- "/Users/jameal.samhouri/Documents/CONFIDENTIAL DATA/PacFIN Tickets/"
+indir2 <- "/Users/ana.guerra/Documents/CONFIDENTIAL/data/PacFIN Tickets/"
 
 ## output directory for confidential data
-out_conf_dir <- "/Users/jameal.samhouri/Documents/Github repos/CCIEA Networks/processed/"
+out_conf_dir <- "/Users/ana.guerra/Documents/CONFIDENTIAL/Outputs/CCIEA Networks"
 
 ## output directory for processed fish tickets. not confidential
 processdir <- "data/input"
 ```
+
 <br>
 
 If you have a new download of fish ticket data and want to clean it up a bit and convert it to RDS, use this chunk.
@@ -142,10 +158,10 @@ Set a few more user inputs to process the fish tickets
 crab_year_write_out_trigger = TRUE
 
 ## if crab_year = TRUE, which crab years of fish tickets are you processing? [numeric vector]
-crab_years <- seq(2004,2025)
+crab_years <- seq(2004, 2025)
 
 ## which years of fish tickets are you processing? [numeric vector]
-years <- seq(2004,2025) 
+years <- seq(2004, 2025)
 
 ## do you want to write out the average price per pounds calculated from the data? [TRUE/FALSE]
 write_ppp = FALSE
@@ -190,21 +206,62 @@ If needed, drop fish tix from any years not used for this analysis.
 ```{r smaller}
 
 rawdat.sub0 <- rawdat #%>%
-  #filter(LANDING_YEAR %in% years)
+#filter(LANDING_YEAR %in% years)
 
 ```
 
 Subset the raw data to include only the columns that are needed. Then rename the columns that will be retained in the final processed data. The last three columns are used to calculate per-species / total revenue and landed weight, but will not ultimately be retained.
 ```{r subset}
-rawdat.sub <- select(rawdat.sub0, c(FISH_TICKET_ID, PACFIN_PORT_CODE, PACFIN_GROUP_PORT_CODE, VESSEL_NUM, AGENCY_CODE, COUNCIL_CODE, 
-                               GEAR_CODE, PACFIN_GROUP_GEAR_CODE, REMOVAL_TYPE_NAME, REMOVAL_TYPE_CODE, DEALER_NUM, FLEET_CODE, PARTICIPATION_GROUP_CODE,
-                               LANDING_DATE, LANDING_YEAR, 
-                               PACFIN_SPECIES_CODE, LANDED_WEIGHT_LBS, PRICE_PER_POUND, AFI_PRICE_PER_POUND, EXVESSEL_REVENUE, AFI_EXVESSEL_REVENUE))
+rawdat.sub <- select(
+  rawdat.sub0,
+  c(
+    FISH_TICKET_ID,
+    PACFIN_PORT_CODE,
+    PACFIN_GROUP_PORT_CODE,
+    VESSEL_NUM,
+    AGENCY_CODE,
+    COUNCIL_CODE,
+    GEAR_CODE,
+    PACFIN_GROUP_GEAR_CODE,
+    REMOVAL_TYPE_NAME,
+    REMOVAL_TYPE_CODE,
+    DEALER_NUM,
+    FLEET_CODE,
+    PARTICIPATION_GROUP_CODE,
+    LANDING_DATE,
+    LANDING_YEAR,
+    PACFIN_SPECIES_CODE,
+    LANDED_WEIGHT_LBS,
+    PRICE_PER_POUND,
+    AFI_PRICE_PER_POUND,
+    EXVESSEL_REVENUE,
+    AFI_EXVESSEL_REVENUE
+  )
+)
 
-colnames(rawdat.sub) <- c("trip_id","pcid", "pcgroup","drvid", "agid", "council",
-                          "grid","grgroup","removal_type", "removal_type_code","proc", "fleet", "participation_group",
-                          "tdate", "year", 
-                          "spid", "pounds", "ppp", "afi_ppp","revenue", "afi_revenue")
+colnames(rawdat.sub) <- c(
+  "trip_id",
+  "pcid",
+  "pcgroup",
+  "drvid",
+  "agid",
+  "council",
+  "grid",
+  "grgroup",
+  "removal_type",
+  "removal_type_code",
+  "proc",
+  "fleet",
+  "participation_group",
+  "tdate",
+  "year",
+  "spid",
+  "pounds",
+  "ppp",
+  "afi_ppp",
+  "revenue",
+  "afi_revenue"
+)
 
 #glimpse(rawdat.sub) # commented out to avoid showing confidential data
 
@@ -228,7 +285,7 @@ rawdat.sub <- rawdat.sub %>%
   filter(drvid != "") %>%
   filter(drvid != "MISSING") %>%
   filter(council != 'N') %>% # fish caught in AK
-  filter(participation_group != 'A') %>% #aquaculture 
+  filter(participation_group != 'A') %>% #aquaculture
   filter(fleet != 'TI') # tribal
 nrows_post <- dim(rawdat.sub)
 nrows_pre - nrows_post
@@ -386,29 +443,64 @@ Next, add in an estimated exvessel revenue for commercial fish tickets which hav
 NOTE FROM JS 010522: MF CHECKED AND THIS PPP CHUNK WORKS PROPERLY
 
 ```{r adjust_revenue}
-## get the average ppp for each species/year/week/port group, write out 
+## get the average ppp for each species/year/week/port group, write out
 ppp_key <- rawdat.sub4 %>%
   filter(afi_ppp_manual > 0) %>%
   group_by(year, tweek, spid_recode, pcgroup) %>%
   summarise(
-    avg_afi_ppp = mean(afi_ppp_manual, na.rm=TRUE),
-    .groups = "drop")
-if(write_ppp){write.csv(ppp_key, paste0(processdir, "Price_per_Pound_Key_",paste0(years,collapse="-"), ".csv"), row.names=FALSE)}
+    avg_afi_ppp = mean(afi_ppp_manual, na.rm = TRUE),
+    .groups = "drop"
+  )
+if (write_ppp) {
+  write.csv(
+    ppp_key,
+    paste0(
+      processdir,
+      "Price_per_Pound_Key_",
+      paste0(years, collapse = "-"),
+      ".csv"
+    ),
+    row.names = FALSE
+  )
+}
 
 ## recalculate revenue for each ticket
 rawdat.sub5 <- rawdat.sub4 %>%
   mutate(
-    adj_afi_ppp = ifelse(removal_type_code %in% c("C","D"),
-                     ifelse(ppp != 0, afi_ppp_manual, 
-                            as.numeric(filter(ppp_key, year == year & tweek == tweek & spid_recode == spid_recode & pcgroup == pcgroup)$avg_afi_ppp)),afi_ppp_manual)
-    ) %>%
-  mutate(
-    adj_afi_revenue = ifelse(afi_revenue_manual != 0, afi_revenue_manual, adj_afi_ppp*pounds)
+    adj_afi_ppp = ifelse(
+      removal_type_code %in% c("C", "D"),
+      ifelse(
+        ppp != 0,
+        afi_ppp_manual,
+        as.numeric(
+          filter(
+            ppp_key,
+            year == year &
+              tweek == tweek &
+              spid_recode == spid_recode &
+              pcgroup == pcgroup
+          )$avg_afi_ppp
+        )
+      ),
+      afi_ppp_manual
     )
+  ) %>%
+  mutate(
+    adj_afi_revenue = ifelse(
+      afi_revenue_manual != 0,
+      afi_revenue_manual,
+      adj_afi_ppp * pounds
+    )
+  )
 
-cat("Added in ", sum(!is.na(rawdat.sub5$adj_afi_ppp)) - sum(!is.na(rawdat.sub5$afi_ppp_manual)), " adjusted ppp.") # this is the modified check Jameal put in
+cat(
+  "Added in ",
+  sum(!is.na(rawdat.sub5$adj_afi_ppp)) -
+    sum(!is.na(rawdat.sub5$afi_ppp_manual)),
+  " adjusted ppp."
+) # this is the modified check Jameal put in
 # cat("Added in ", sum(!is.na(rawdat.sub$ppp)) - sum(rawdat.sub$ppp != 0), " adjusted ppp.") # this is the original check Mary wrote
-    
+
 ```
 <br>
 
@@ -422,16 +514,47 @@ rm(rawdat.sub4)
 
 ## 2.1. By year
 ```{r write, eval=TRUE}
-for(y in years){
+for (y in years) {
   ## grab data for given year, reorder columns
   tmp_out <- rawdat.sub5 %>%
     filter(year == y) %>%
-    dplyr::select(c(trip_id, year, tdate,agid, 
-                       pcgroup, pcid, IOPAC,
-                       spid, spid_recode, SPGRPN2, council,
-                       grgroup, grid, removal_type,removal_type_code,
-                       drvid, drvid_year,proc, fleet, participation_group, pounds, ppp, afi_ppp, adj_afi_ppp, revenue, afi_revenue, adj_afi_revenue)) # removed adj_ppp and adj_revenue 01-18-2024
-  write.csv(tmp_out, paste0(out_conf_dir, paste0("fish_tickets_", y, "_processed_for_networks_",Sys.Date(),".csv")), row.names=FALSE)
+    dplyr::select(c(
+      trip_id,
+      year,
+      tdate,
+      agid,
+      pcgroup,
+      pcid,
+      IOPAC,
+      spid,
+      spid_recode,
+      SPGRPN2,
+      council,
+      grgroup,
+      grid,
+      removal_type,
+      removal_type_code,
+      drvid,
+      drvid_year,
+      proc,
+      fleet,
+      participation_group,
+      pounds,
+      ppp,
+      afi_ppp,
+      adj_afi_ppp,
+      revenue,
+      afi_revenue,
+      adj_afi_revenue
+    )) # removed adj_ppp and adj_revenue 01-18-2024
+  write.csv(
+    tmp_out,
+    paste0(
+      out_conf_dir,
+      paste0("fish_tickets_", y, "_processed_for_networks_", Sys.Date(), ".csv")
+    ),
+    row.names = FALSE
+  )
 }
 ```
 <br>
@@ -466,5 +589,5 @@ if(crab_year_write_out_trigger){
 
 Script runtime: 
 ```{r echo=FALSE}
-Sys.time()-script_start_time
+Sys.time() - script_start_time
 ```
