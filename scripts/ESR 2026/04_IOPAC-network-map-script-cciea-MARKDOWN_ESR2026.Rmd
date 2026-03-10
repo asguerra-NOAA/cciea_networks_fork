@@ -8,11 +8,13 @@ subtitle: Preparation for network analysis in CCIEA ESR 2026
 
 Clear the environment
 ```{r}
-rm(list=ls())
+rm(list = ls())
 
 # output to the ESR repo automatically
 # esr_dir = paste0('~/GitHub/Ecosystem-Status-Report-FY2026/Figures/')  # nick
-esr_dir = paste0('/Users/jameal.samhouri/Documents/Github repos/Ecosystem-Status-Report-FY2026/Figures/') # jameal
+esr_dir = paste0(
+  "/Users/ana.guerra/Documents/CONFIDENTIAL/Outputs/CCIEA Networks/Figures/"
+) # jameal
 # change to reflect directory that ESR repo is in
 esr_output = TRUE # set to false if not writing ESR repo
 
@@ -28,7 +30,9 @@ library(ggrepel)
 library(ggimage)
 library(cowplot)
 library(here)
+```
 
+```{r}
 ## output directory for network viz
 pngdir_ports = 'data/networks/participation_vessel_ports/plots/comparable/2025 only/.'
 fig_path = here::here(pngdir_ports)
@@ -38,111 +42,166 @@ fig_path = here::here(pngdir_ports)
 thisyear <- 2025
 
 # add date for most recent graphs
-most_recent_igraph <- "2026-01-20"
+most_recent_igraph <- "2026-03-10"
 
 #fig_path
-thisyearsESRimages <- list.files(here::here(pngdir_ports), paste0("2025_circular_compare_",most_recent_igraph))
+thisyearsESRimages <- list.files(
+  here::here(pngdir_ports),
+  paste0("2025_circular_compare_", most_recent_igraph)
+)
 
-wa_fig_path <- here::here('data/networks/participation_vessel_ports/plots/comparable/')
+wa_fig_path <- here::here(
+  'data/networks/participation_vessel_ports/plots/comparable/'
+)
 
-knitr::opts_chunk$set(fig.width=6, fig.height=10, fig.path= fig_path, dpi = 600,
-                      results = 'asis', concordance=F, echo=F, cache = F, warning = F, error=F, message = F)
+knitr::opts_chunk$set(
+  fig.width = 6,
+  fig.height = 10,
+  fig.path = fig_path,
+  dpi = 600,
+  results = 'asis',
+  concordance = F,
+  echo = F,
+  cache = F,
+  warning = F,
+  error = F,
+  message = F
+)
 
 
 ```
 
 ```{r}
 
-
-
-
 #wa
 img_nwc <- magick::image_read(
-  here::here(pngdir_ports,
-  thisyearsESRimages[grep("North WA Coast", thisyearsESRimages)])
+  here::here(
+    pngdir_ports,
+    thisyearsESRimages[grep("North WA Coast", thisyearsESRimages)]
   )
+)
 img_wc <- magick::image_read(
-  here::here(pngdir_ports,
-             thisyearsESRimages[grep("(?<!North )WA Coast", thisyearsESRimages, perl = TRUE)])
+  here::here(
+    pngdir_ports,
+    thisyearsESRimages[grep(
+      "(?<!North )WA Coast",
+      thisyearsESRimages,
+      perl = TRUE
+    )]
+  )
 )
 img_ps <- magick::image_read(
-  here::here(pngdir_ports,
-             thisyearsESRimages[grep("Puget Sound", thisyearsESRimages)])
+  here::here(
+    pngdir_ports,
+    thisyearsESRimages[grep("Puget Sound", thisyearsESRimages)]
+  )
 )
 
 #or
 img_ast <- magick::image_read(
-  here::here(pngdir_ports,
-             thisyearsESRimages[grep("Astoria", thisyearsESRimages)])
-) 
+  here::here(
+    pngdir_ports,
+    thisyearsESRimages[grep("Astoria", thisyearsESRimages)]
+  )
+)
 img_tl <- magick::image_read(
-  here::here(pngdir_ports,
-             thisyearsESRimages[grep("Tillamook", thisyearsESRimages)])
+  here::here(
+    pngdir_ports,
+    thisyearsESRimages[grep("Tillamook", thisyearsESRimages)]
+  )
 )
 img_nwp <- magick::image_read(
-  here::here(pngdir_ports,
-             thisyearsESRimages[grep("Newport", thisyearsESRimages)])
+  here::here(
+    pngdir_ports,
+    thisyearsESRimages[grep("Newport", thisyearsESRimages)]
+  )
 )
 img_cb <- magick::image_read(
-  here::here(pngdir_ports,
-             thisyearsESRimages[grep("Coos Bay", thisyearsESRimages)])
+  here::here(
+    pngdir_ports,
+    thisyearsESRimages[grep("Coos Bay", thisyearsESRimages)]
+  )
 )
-img_brk <-  magick::image_read(
-  here::here(pngdir_ports,
-             thisyearsESRimages[grep("Brookings", thisyearsESRimages)])
+img_brk <- magick::image_read(
+  here::here(
+    pngdir_ports,
+    thisyearsESRimages[grep("Brookings", thisyearsESRimages)]
+  )
 )
 img_cr <- magick::image_read(
-  here::here(pngdir_ports,
-             thisyearsESRimages[grep("Columbia River", thisyearsESRimages)])
+  here::here(
+    pngdir_ports,
+    thisyearsESRimages[grep("Columbia River", thisyearsESRimages)]
+  )
 )
 
 #nca
 img_cc <- magick::image_read(
-  here::here(pngdir_ports,
-             thisyearsESRimages[grep("Crescent City", thisyearsESRimages)])
+  here::here(
+    pngdir_ports,
+    thisyearsESRimages[grep("Crescent City", thisyearsESRimages)]
+  )
 )
 img_eu <- magick::image_read(
-  here::here(pngdir_ports,
-             thisyearsESRimages[grep("Eureka", thisyearsESRimages)])
+  here::here(
+    pngdir_ports,
+    thisyearsESRimages[grep("Eureka", thisyearsESRimages)]
+  )
 )
 img_fb <- magick::image_read(
-  here::here(pngdir_ports,
-             thisyearsESRimages[grep("Fort Bragg", thisyearsESRimages)])
+  here::here(
+    pngdir_ports,
+    thisyearsESRimages[grep("Fort Bragg", thisyearsESRimages)]
+  )
 )
 img_bb <- magick::image_read(
-  here::here(pngdir_ports,
-             thisyearsESRimages[grep("Bodega Bay", thisyearsESRimages)])
+  here::here(
+    pngdir_ports,
+    thisyearsESRimages[grep("Bodega Bay", thisyearsESRimages)]
+  )
 )
 img_sf <- magick::image_read(
-  here::here(pngdir_ports,
-             thisyearsESRimages[grep("San Francisco", thisyearsESRimages)])
+  here::here(
+    pngdir_ports,
+    thisyearsESRimages[grep("San Francisco", thisyearsESRimages)]
+  )
 )
 img_mt <- magick::image_read(
-  here::here(pngdir_ports,
-             thisyearsESRimages[grep("Monterey", thisyearsESRimages)])
+  here::here(
+    pngdir_ports,
+    thisyearsESRimages[grep("Monterey", thisyearsESRimages)]
+  )
 )
 
 #sca
 img_sd <- magick::image_read(
-  here::here(pngdir_ports,
-             thisyearsESRimages[grep("San Diego", thisyearsESRimages)])
+  here::here(
+    pngdir_ports,
+    thisyearsESRimages[grep("San Diego", thisyearsESRimages)]
+  )
 )
 img_sb <- magick::image_read(
-  here::here(pngdir_ports,
-             thisyearsESRimages[grep("Santa Barbara", thisyearsESRimages)])
+  here::here(
+    pngdir_ports,
+    thisyearsESRimages[grep("Santa Barbara", thisyearsESRimages)]
+  )
 )
 img_la <- magick::image_read(
-  here::here(pngdir_ports,
-             thisyearsESRimages[grep("Los Angeles", thisyearsESRimages)])
+  here::here(
+    pngdir_ports,
+    thisyearsESRimages[grep("Los Angeles", thisyearsESRimages)]
+  )
 )
 img_mb <- magick::image_read(
-  here::here(pngdir_ports,
-             thisyearsESRimages[grep("Morro Bay", thisyearsESRimages)])
+  here::here(
+    pngdir_ports,
+    thisyearsESRimages[grep("Morro Bay", thisyearsESRimages)]
+  )
 )
 
 
 #load spreadsheet with lat-long coordinates for boxes
-box <- read_csv(here::here('data','input','node_box_ref_esr2026.csv'))
+box <- read_csv(here::here('data', 'input', 'node_box_ref_esr2026.csv'))
 
 ```
 
@@ -160,31 +219,93 @@ base_map_iopac <- function(state, xlim, ylim) {
   states <- map_data("state")
   west_coast <- subset(states, region %in% state)
   base_map <- ggplot(data = west_coast) +
-    geom_polygon(aes(x = long, y = lat, group = group), fill = "gray90", alpha = 0.5, color = "gray85") +
+    geom_polygon(
+      aes(x = long, y = lat, group = group),
+      fill = "gray90",
+      alpha = 0.5,
+      color = "gray85"
+    ) +
     coord_map(xlim = xlim, ylim = ylim) +
     theme_map()
   return(base_map)
-  }
+}
 
 # filter function for boxes to include
 box_filter <- function(region) {
   box <- box %>% filter(map_version == region)
   return(box)
-  }
+}
 
 # function to create iopac map with boxes
 box_iopac <- function(basemap, box_filter, region) {
-  iopac_rect <- basemap + 
-  geom_point(data = subset(box, map_version %in% region), aes(x=PRIMARY_LONGITUDE, y=PRIMARY_LATITUDE, fill = STATE), colour="black", pch=21, size = 2) +
-  geom_text_repel(aes(x=PRIMARY_LONGITUDE, y=PRIMARY_LATITUDE, label= IOPAC), data = subset(box, map_version %in% region), size = 2.15, # AG changed text size 010425
-                  box.padding = 0, point.padding = 0.25, hjust = -.25) +
-  geom_rect(data = box_filter, aes(xmax = xmax, ymax = ymax, xmin = xmin, ymin=ymin), fill=NA, colour="darkgray") +
-  geom_segment(data = subset(box_filter, segment_line == 'upper_right'), aes(x=PRIMARY_LONGITUDE, y=PRIMARY_LATITUDE, xend = xmax, yend = ymax), color = 'darkgray') +
-  geom_segment(data = subset(box_filter, segment_line == 'lower_right'), aes(x=PRIMARY_LONGITUDE, y=PRIMARY_LATITUDE, xend = xmax, yend = ymin), color = 'darkgray') +
-  geom_segment(data = subset(box_filter, segment_line == 'upper_left'), aes(x=PRIMARY_LONGITUDE, y=PRIMARY_LATITUDE, xend = xmin, yend = ymax), color = 'darkgray') +
-  geom_segment(data = subset(box_filter, segment_line == 'lower_left'), aes(x=PRIMARY_LONGITUDE, y=PRIMARY_LATITUDE, xend = xmin, yend = ymin), color = 'darkgray') +
-  theme(axis.title.x = element_blank(), axis.title.y = element_blank(), legend.position = "none") +
-  scale_fill_manual(values = c('gray', 'black', 'white'))
+  iopac_rect <- basemap +
+    geom_point(
+      data = subset(box, map_version %in% region),
+      aes(x = PRIMARY_LONGITUDE, y = PRIMARY_LATITUDE, fill = STATE),
+      colour = "black",
+      pch = 21,
+      size = 2
+    ) +
+    geom_text_repel(
+      aes(x = PRIMARY_LONGITUDE, y = PRIMARY_LATITUDE, label = IOPAC),
+      data = subset(box, map_version %in% region),
+      size = 2.15, # AG changed text size 010425
+      box.padding = 0,
+      point.padding = 0.25,
+      hjust = -.25
+    ) +
+    geom_rect(
+      data = box_filter,
+      aes(xmax = xmax, ymax = ymax, xmin = xmin, ymin = ymin),
+      fill = NA,
+      colour = "darkgray"
+    ) +
+    geom_segment(
+      data = subset(box_filter, segment_line == 'upper_right'),
+      aes(
+        x = PRIMARY_LONGITUDE,
+        y = PRIMARY_LATITUDE,
+        xend = xmax,
+        yend = ymax
+      ),
+      color = 'darkgray'
+    ) +
+    geom_segment(
+      data = subset(box_filter, segment_line == 'lower_right'),
+      aes(
+        x = PRIMARY_LONGITUDE,
+        y = PRIMARY_LATITUDE,
+        xend = xmax,
+        yend = ymin
+      ),
+      color = 'darkgray'
+    ) +
+    geom_segment(
+      data = subset(box_filter, segment_line == 'upper_left'),
+      aes(
+        x = PRIMARY_LONGITUDE,
+        y = PRIMARY_LATITUDE,
+        xend = xmin,
+        yend = ymax
+      ),
+      color = 'darkgray'
+    ) +
+    geom_segment(
+      data = subset(box_filter, segment_line == 'lower_left'),
+      aes(
+        x = PRIMARY_LONGITUDE,
+        y = PRIMARY_LATITUDE,
+        xend = xmin,
+        yend = ymin
+      ),
+      color = 'darkgray'
+    ) +
+    theme(
+      axis.title.x = element_blank(),
+      axis.title.y = element_blank(),
+      legend.position = "none"
+    ) +
+    scale_fill_manual(values = c('gray', 'black', 'white'))
   return(iopac_rect)
 }
 
@@ -197,102 +318,366 @@ box_iopac <- function(basemap, box_filter, region) {
 
 # AG changed image sizes below 010425
 
-CW_map <- ggdraw(box_iopac(base_map_iopac(c("washington", "oregon", "california"), c(-130, -117), c(NA, NA)), box_filter('CW'),c('WA', 'OR', 'NCA', 'SCA'))) + # AG changed longitude limits 010425
-  draw_image(img_ps, x = .06, y = .66, hjust = 0, vjust = 0, width = 0.31, height = 0.31) +
-  draw_image(img_nwp, x = .08, y = .43, hjust = 0, vjust = 0, width = 0.31, height = 0.31) +
-  draw_image(img_cc, x = .08, y = .18, hjust = 0, vjust = 0, width = 0.31, height = 0.31) +
-  draw_image(img_eu, x = .27, y = .29, hjust = 0, vjust = 1, width = 0.31, height = 0.31) 
+CW_map <- ggdraw(box_iopac(
+  base_map_iopac(
+    c("washington", "oregon", "california"),
+    c(-130, -117),
+    c(NA, NA)
+  ),
+  box_filter('CW'),
+  c('WA', 'OR', 'NCA', 'SCA')
+)) + # AG changed longitude limits 010425
+  draw_image(
+    img_ps,
+    x = .06,
+    y = .66,
+    hjust = 0,
+    vjust = 0,
+    width = 0.31,
+    height = 0.31
+  ) +
+  draw_image(
+    img_nwp,
+    x = .08,
+    y = .43,
+    hjust = 0,
+    vjust = 0,
+    width = 0.31,
+    height = 0.31
+  ) +
+  draw_image(
+    img_cc,
+    x = .08,
+    y = .18,
+    hjust = 0,
+    vjust = 0,
+    width = 0.31,
+    height = 0.31
+  ) +
+  draw_image(
+    img_eu,
+    x = .27,
+    y = .29,
+    hjust = 0,
+    vjust = 1,
+    width = 0.31,
+    height = 0.31
+  )
 
 CW_map
 
-ggsave(here::here(pngdir_ports,
-                paste0('iopac-node_full-coast_rect_font_',thisyear,'.png')), CW_map, width = 6, height = 10, dpi =600)
+ggsave(
+  here::here(
+    pngdir_ports,
+    paste0('iopac-node_full-coast_rect_font_', thisyear, '.png')
+  ),
+  CW_map,
+  width = 6,
+  height = 10,
+  dpi = 600
+)
 
 # output to ESR repo
-if(esr_output==TRUE){ggsave( paste0(esr_dir,'fpn-coast-',thisyear,'.png'), CW_map, width = 6, height = 10, dpi =600)}
+if (esr_output == TRUE) {
+  ggsave(
+    paste0(esr_dir, 'fpn-coast-', thisyear, '.png'),
+    CW_map,
+    width = 6,
+    height = 10,
+    dpi = 600
+  )
+}
 
 ```
 
 
 ```{r iopac-node_WA_rect_m, fig.width=6, fig.height=6}
-WA_map <- ggdraw(box_iopac(base_map_iopac("washington", c(-130, -117), c(NA, NA)), 
-                             box_filter('WA'), 
-                             'WA')) + 
-  draw_image(img_ps, x = .39, y = .66, hjust = 0, vjust = 0, width = 0.3, height = 0.26) +
-  draw_image(img_nwc, x = .14, y = .34, hjust = 0, vjust = 0, width = 0.3, height = 0.26) +
-  draw_image(img_wc, x = .39, y = .05, hjust = 0, vjust = 0, width = 0.3, height = 0.26) 
-  
+WA_map <- ggdraw(box_iopac(
+  base_map_iopac("washington", c(-130, -117), c(NA, NA)),
+  box_filter('WA'),
+  'WA'
+)) +
+  draw_image(
+    img_ps,
+    x = .39,
+    y = .66,
+    hjust = 0,
+    vjust = 0,
+    width = 0.3,
+    height = 0.26
+  ) +
+  draw_image(
+    img_nwc,
+    x = .14,
+    y = .34,
+    hjust = 0,
+    vjust = 0,
+    width = 0.3,
+    height = 0.26
+  ) +
+  draw_image(
+    img_wc,
+    x = .39,
+    y = .05,
+    hjust = 0,
+    vjust = 0,
+    width = 0.3,
+    height = 0.26
+  )
+
 WA_map
 
-ggsave(here::here(pngdir_ports,
-                  paste0('iopac-node_WA_rect_',thisyear,'.png')
-                  ), WA_map, width = 6, height = 6, dpi =600)
+ggsave(
+  here::here(pngdir_ports, paste0('iopac-node_WA_rect_', thisyear, '.png')),
+  WA_map,
+  width = 6,
+  height = 6,
+  dpi = 600
+)
 
-if(esr_output==TRUE){ggsave( paste0(esr_dir,'fpn-wa-',thisyear,'.png'), WA_map, width = 6, height = 6, dpi =600)}
+if (esr_output == TRUE) {
+  ggsave(
+    paste0(esr_dir, 'fpn-wa-', thisyear, '.png'),
+    WA_map,
+    width = 6,
+    height = 6,
+    dpi = 600
+  )
+}
 ```
 
 
 ```{r iopac-node_OR_rect_m, fig.width=6, fig.height=6}
 
-OR_map <- ggdraw(box_iopac(base_map_iopac("oregon", c(-130, -117), c(NA, NA)), 
-                             box_filter('OR'), 
-                             'OR')) + 
-  draw_image(img_cr, x = .61, y = .65, hjust = 0, vjust = 0, width = 0.29, height = 0.29) +
-  draw_image(img_ast, x = .35, y = .695, hjust = 0, vjust = 0, width = 0.29, height = 0.25) +
-  draw_image(img_tl, x = .04, y = .61, hjust = 0, vjust = 0, width = 0.29, height = 0.29) +
-  draw_image(img_nwp, x = .12, y = .34, hjust = 0, vjust = 0, width = 0.28, height = 0.28) +
-  draw_image(img_cb, x = .11, y = .08, hjust = 0, vjust = 0, width = 0.26, height = 0.26) +
-  draw_image(img_brk, x = .515, y = .04, hjust = 0, vjust = 0, width = 0.28, height = 0.28)
+OR_map <- ggdraw(box_iopac(
+  base_map_iopac("oregon", c(-130, -117), c(NA, NA)),
+  box_filter('OR'),
+  'OR'
+)) +
+  draw_image(
+    img_cr,
+    x = .61,
+    y = .65,
+    hjust = 0,
+    vjust = 0,
+    width = 0.29,
+    height = 0.29
+  ) +
+  draw_image(
+    img_ast,
+    x = .35,
+    y = .695,
+    hjust = 0,
+    vjust = 0,
+    width = 0.29,
+    height = 0.25
+  ) +
+  draw_image(
+    img_tl,
+    x = .04,
+    y = .61,
+    hjust = 0,
+    vjust = 0,
+    width = 0.29,
+    height = 0.29
+  ) +
+  draw_image(
+    img_nwp,
+    x = .12,
+    y = .34,
+    hjust = 0,
+    vjust = 0,
+    width = 0.28,
+    height = 0.28
+  ) +
+  draw_image(
+    img_cb,
+    x = .11,
+    y = .08,
+    hjust = 0,
+    vjust = 0,
+    width = 0.26,
+    height = 0.26
+  ) +
+  draw_image(
+    img_brk,
+    x = .515,
+    y = .04,
+    hjust = 0,
+    vjust = 0,
+    width = 0.28,
+    height = 0.28
+  )
 
 OR_map
 
-ggsave(here::here(pngdir_ports,
-                  paste0('iopac-node_OR_rect_',thisyear,'.png')
-                  ), OR_map, width = 6, height = 6, dpi =600)
+ggsave(
+  here::here(pngdir_ports, paste0('iopac-node_OR_rect_', thisyear, '.png')),
+  OR_map,
+  width = 6,
+  height = 6,
+  dpi = 600
+)
 
-if(esr_output==TRUE){ggsave( paste0(esr_dir,'fpn-or-',thisyear,'.png'), OR_map, width = 6, height = 6, dpi =600)}
+if (esr_output == TRUE) {
+  ggsave(
+    paste0(esr_dir, 'fpn-or-', thisyear, '.png'),
+    OR_map,
+    width = 6,
+    height = 6,
+    dpi = 600
+  )
+}
 ```
 
 ```{r iopac-node_NCA_rect_m, fig.width=7, fig.height=6}
 
-NCA_map <- ggdraw(box_iopac(base_map_iopac("california", c(-130, -117), c(NA, NA)), 
-                            box_filter('NCA'), 
-                            'NCA')) + 
-  draw_image(img_cc, x = .245, y = .71, hjust = 0, vjust = 0, width = 0.23, height = 0.23) +
-  draw_image(img_eu, x = .505, y = .72, hjust = 0, vjust = 0, width = 0.24, height = 0.24) +
-  draw_image(img_fb, x = .200, y = .49, hjust = 0, vjust = 0, width = 0.22, height = 0.22) +
-  draw_image(img_bb, x = .625, y = .48, hjust = 0, vjust = 0, width = 0.22, height = 0.24) +
-  draw_image(img_sf, x = .225, y = .25, hjust = 0, vjust = 0, width = 0.24, height = 0.24) +
-  draw_image(img_mt, x = .615, y = .26, hjust = 0, vjust = 0, width = 0.24, height = 0.24)
+NCA_map <- ggdraw(box_iopac(
+  base_map_iopac("california", c(-130, -117), c(NA, NA)),
+  box_filter('NCA'),
+  'NCA'
+)) +
+  draw_image(
+    img_cc,
+    x = .245,
+    y = .71,
+    hjust = 0,
+    vjust = 0,
+    width = 0.23,
+    height = 0.23
+  ) +
+  draw_image(
+    img_eu,
+    x = .505,
+    y = .72,
+    hjust = 0,
+    vjust = 0,
+    width = 0.24,
+    height = 0.24
+  ) +
+  draw_image(
+    img_fb,
+    x = .200,
+    y = .49,
+    hjust = 0,
+    vjust = 0,
+    width = 0.22,
+    height = 0.22
+  ) +
+  draw_image(
+    img_bb,
+    x = .625,
+    y = .48,
+    hjust = 0,
+    vjust = 0,
+    width = 0.22,
+    height = 0.24
+  ) +
+  draw_image(
+    img_sf,
+    x = .225,
+    y = .25,
+    hjust = 0,
+    vjust = 0,
+    width = 0.24,
+    height = 0.24
+  ) +
+  draw_image(
+    img_mt,
+    x = .615,
+    y = .26,
+    hjust = 0,
+    vjust = 0,
+    width = 0.24,
+    height = 0.24
+  )
 
 NCA_map
 
-ggsave(here::here(pngdir_ports,
-                  paste0('iopac-node_NCA_rect_',thisyear,'.png')
-                  ), NCA_map, width = 6, height = 6, dpi =600)
-                  
-                  
-if(esr_output==TRUE){ggsave( paste0(esr_dir,'fpn-nca-',thisyear,'.png'), NCA_map, width = 6, height = 6, dpi =600)}
+ggsave(
+  here::here(pngdir_ports, paste0('iopac-node_NCA_rect_', thisyear, '.png')),
+  NCA_map,
+  width = 6,
+  height = 6,
+  dpi = 600
+)
+
+
+if (esr_output == TRUE) {
+  ggsave(
+    paste0(esr_dir, 'fpn-nca-', thisyear, '.png'),
+    NCA_map,
+    width = 6,
+    height = 6,
+    dpi = 600
+  )
+}
 ```
 
 
 ```{r iopac-node_SCA_rect_m, fig.width=6, fig.height=5}
 
-SCA_map <- ggdraw(box_iopac(base_map_iopac("california", c(-130, -117), c(NA, NA)), 
-                            box_filter('SCA'), 
-                            'SCA')) + 
-  draw_image(img_mb, x = .25, y = .325, hjust = 0, vjust = 0, width = 0.19, height = 0.20) +
-  draw_image(img_sb, x = .46, y = .26, hjust = 0, vjust = 0, width = 0.20, height = 0.21) +
-  draw_image(img_la, x = .43, y = .04, hjust = 0, vjust = 0, width = 0.20, height = 0.21) +
-  draw_image(img_sd, x = .65, y = .04, hjust = 0, vjust = 0, width = 0.20, height = 0.21) 
+SCA_map <- ggdraw(box_iopac(
+  base_map_iopac("california", c(-130, -117), c(NA, NA)),
+  box_filter('SCA'),
+  'SCA'
+)) +
+  draw_image(
+    img_mb,
+    x = .25,
+    y = .325,
+    hjust = 0,
+    vjust = 0,
+    width = 0.19,
+    height = 0.20
+  ) +
+  draw_image(
+    img_sb,
+    x = .46,
+    y = .26,
+    hjust = 0,
+    vjust = 0,
+    width = 0.20,
+    height = 0.21
+  ) +
+  draw_image(
+    img_la,
+    x = .43,
+    y = .04,
+    hjust = 0,
+    vjust = 0,
+    width = 0.20,
+    height = 0.21
+  ) +
+  draw_image(
+    img_sd,
+    x = .65,
+    y = .04,
+    hjust = 0,
+    vjust = 0,
+    width = 0.20,
+    height = 0.21
+  )
 
 SCA_map
 
-ggsave(here::here(pngdir_ports,
-                  paste0('iopac-node_SCA_rect_',thisyear,'.png')
-                  ), SCA_map, width = 6, height = 6, dpi =600)
+ggsave(
+  here::here(pngdir_ports, paste0('iopac-node_SCA_rect_', thisyear, '.png')),
+  SCA_map,
+  width = 6,
+  height = 6,
+  dpi = 600
+)
 
-if(esr_output==TRUE){ggsave( paste0(esr_dir,'fpn-sca-',thisyear,'.png'), SCA_map, width = 6, height = 6, dpi =600)}
+if (esr_output == TRUE) {
+  ggsave(
+    paste0(esr_dir, 'fpn-sca-', thisyear, '.png'),
+    SCA_map,
+    width = 6,
+    height = 6,
+    dpi = 600
+  )
+}
 ```
 
 
@@ -301,33 +686,44 @@ if(esr_output==TRUE){ggsave( paste0(esr_dir,'fpn-sca-',thisyear,'.png'), SCA_map
 #     res=200, height=1600,width=1600)  # ,height=1400,width=1600
 
 p_all <- ggplot(data.frame(x = 1:10, y = 1:10), aes(x, y)) +
-  geom_point(size = 1, colour=NA) +
-  draw_image(img_nwc , x = 1, y = 9, scale = 2) +
-  draw_image(img_wc , x = 3, y = 9, scale = 2) +
-  draw_image(img_ps , x = 5, y = 9, scale = 2) +
-  draw_image(img_ast , x = 7, y = 9, scale = 2) +
-  draw_image(img_tl , x = 9, y = 9, scale = 2) +
-  draw_image(img_cr , x = 1, y = 7, scale = 2) +
-  draw_image(img_nwp , x = 3, y = 7, scale = 2) +
-  draw_image(img_brk , x = 5, y = 7, scale = 2) +
-  draw_image(img_cb , x = 7, y = 7, scale = 2) +
-  draw_image(img_cc , x = 9, y = 7, scale = 2) +
-  draw_image(img_eu , x = 1, y = 5, scale = 2) +
-  draw_image(img_fb , x = 3, y = 5, scale = 2) +
-  draw_image(img_bb , x = 5, y = 5, scale = 2) +
-  draw_image(img_sf , x = 7, y = 5, scale = 2) +
-  draw_image(img_mt , x = 9, y = 5, scale = 2) +
-  draw_image(img_mb , x = 1, y = 3, scale = 2) +
-  draw_image(img_sb, x = 3, y = 3, scale = 2) + 
-  draw_image(img_la , x = 5, y = 3, scale = 2) +
-  draw_image(img_sd , x = 7, y = 3, scale = 2) + 
+  geom_point(size = 1, colour = NA) +
+  draw_image(img_nwc, x = 1, y = 9, scale = 2) +
+  draw_image(img_wc, x = 3, y = 9, scale = 2) +
+  draw_image(img_ps, x = 5, y = 9, scale = 2) +
+  draw_image(img_ast, x = 7, y = 9, scale = 2) +
+  draw_image(img_tl, x = 9, y = 9, scale = 2) +
+  draw_image(img_cr, x = 1, y = 7, scale = 2) +
+  draw_image(img_nwp, x = 3, y = 7, scale = 2) +
+  draw_image(img_brk, x = 5, y = 7, scale = 2) +
+  draw_image(img_cb, x = 7, y = 7, scale = 2) +
+  draw_image(img_cc, x = 9, y = 7, scale = 2) +
+  draw_image(img_eu, x = 1, y = 5, scale = 2) +
+  draw_image(img_fb, x = 3, y = 5, scale = 2) +
+  draw_image(img_bb, x = 5, y = 5, scale = 2) +
+  draw_image(img_sf, x = 7, y = 5, scale = 2) +
+  draw_image(img_mt, x = 9, y = 5, scale = 2) +
+  draw_image(img_mb, x = 1, y = 3, scale = 2) +
+  draw_image(img_sb, x = 3, y = 3, scale = 2) +
+  draw_image(img_la, x = 5, y = 3, scale = 2) +
+  draw_image(img_sd, x = 7, y = 3, scale = 2) +
   theme_void()
 
 p_all
 
-ggsave(here::here(pngdir_ports,
-                  paste0('All Fisheries Participation Networks ', thisyear, ' by IOPAC Port Group.png')
-                  ), p_all, width = 6, height = 6, dpi =600)
+ggsave(
+  here::here(
+    pngdir_ports,
+    paste0(
+      'All Fisheries Participation Networks ',
+      thisyear,
+      ' by IOPAC Port Group.png'
+    )
+  ),
+  p_all,
+  width = 6,
+  height = 6,
+  dpi = 600
+)
 
 ```
 
