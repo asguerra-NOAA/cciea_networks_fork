@@ -71,7 +71,7 @@ source("R/calc_network_stats.R")
 Select your directories.
 ```{r}
 ## location of fish ticket with metiers assigned, metier key for each port group
-indir = '/Users/jameal.samhouri/Documents/Github repos/CCIEA Networks/processed'
+indir = "/Users/ana.guerra/Documents/CONFIDENTIAL/Outputs/CCIEA Networks/"
 # indir = "/Users/abigail.golden/Desktop/Research/24 - CEFI/data/fish_tickets/processed" # Abigail's fish ticket directory
 
 ## output directory for igraph objects
@@ -174,14 +174,14 @@ NOTES FOR JAMEAL:
 
 # date of last fish ticket processing
 # rundate <- "2025-01-08" # Abigail's last fish ticket processing
-rundate <- "2025-12-23" # Jameal's last fish ticket processing
+rundate <- "2026-03-10" # Jameal's last fish ticket processing
 
 for(y in years){
   if(y %in% ref_years){
-    tmptix <- read.csv(paste0(indir,"/fish_tickets_crab", y, "_processed_for_networks_", rundate, ".csv"), stringsAsFactors = FALSE) %>%
+    tmptix <- read.csv(paste0(indir,"fish_tickets_crab", y, "_processed_for_networks_", rundate, ".csv"), stringsAsFactors = FALSE) %>%
     filter(IOPAC %in% myports)
   } else{
-    tmptix <- read.csv(paste0(indir,"/fish_tickets_crab", y, "_processed_for_networks_" , rundate, ".csv"), stringsAsFactors = FALSE) %>%
+    tmptix <- read.csv(paste0(indir,"fish_tickets_crab", y, "_processed_for_networks_" , rundate, ".csv"), stringsAsFactors = FALSE) %>%
     filter(IOPAC %in% myports)
   }
   if(exists('fishtix')){

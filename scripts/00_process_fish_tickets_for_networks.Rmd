@@ -79,10 +79,10 @@ Select your directories.
 ```{r get_dir}
 ## raw PacFIN fish ticket data file location
 #indir1 <- "/Users/jameal.samhouri/Documents/Koehn et al. cc vulnerability/Data/"
-indir2 <- "/Users/jameal.samhouri/Documents/CCIEA Networks/raw/"
+indir2 <- '/Users/ana.guerra/Documents/CONFIDENTIAL/Data/PacFIN Tickets/'
 
 ## output directory for confidential data
-out_conf_dir <- "/Users/jameal.samhouri/Documents/CCIEA Networks/processed/"
+out_conf_dir <- '/Users/ana.guerra/Documents/CONFIDENTIAL/Outputs/CCIEA Networks'
 
 ## output directory for processed fish tickets. not confidential
 processdir <- "data/input"
@@ -115,7 +115,7 @@ Specify file name of the raw fish ticket data file and supporting files with spe
 # myfile2 <- "fish tickets 2004-2021 122921.csv" # latest pull from PacFIN: 12-29-21.
 # myfile2 <- "pacfin_compiled_2004thru2021.rds" # latest pull from PacFIN: 12-29-21.
 
-myfile2 <- 'fish tickets 2016-2023 121323.rds' # latest pull from PacFIN 12-13-2023
+myfile2 <- 'fish tickets 2003-2025 12152025' # latest pull from PacFIN 12-13-2023
 
 myfile3 <- "iopac_conversion_table.csv"
 myfile4 <- "species_groupings_spgrpn2_iea.csv" # originally from first tab of species_groupings IEA.xlsx from Dan Holland. see email of 121520
@@ -158,8 +158,8 @@ rawdat <- read_rds(paste0(out_conf_dir,myfile2))
 glimpse(rawdat)
 colnames(rawdat)
 
-port_grps <- read_csv(here::here(processdir,myfile3))
-sp_grps <- read_csv(here::here(processdir,myfile4)) %>% distinct() # remove duplicate rows (GPH1 is duplicated)
+port_grps <- read_csv(here::here(inir,myfile3))
+sp_grps <- read_csv(here::here(processdir,myfile4)) %>% distinct() #remove duplicate rows (GPH1 is duplicated)
 
 ```
 <br>
