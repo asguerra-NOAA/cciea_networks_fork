@@ -1,19 +1,31 @@
 ---
+title: "Untitled"
+format: html
+---
+
+---
 title: "Compare Timeseries of Network Stats Across Port Groups and to Other ESR Indicators"
 format: html
 ---
 
+```{r}
 ## --- Setup & Directories ---
 library(tidyverse)
 library(here)
 library(PNWColors)
 library(viridis)
+```
 
-indir  <- 'results/statistics'
+
+```{r}
+indir <- 'results/statistics'
 pngdir <- 'results/figures'
 other_indir <- 'data/input'
+```
+
 
 # Define metadata for files
+```{r}
 file_meta <- list(
   nodes = list(
     file = "VesselLevelNodeStats_2004_2025_21pcgroups_totalrev7873.43337267464_indivrev787.343337267464_connectivity_rmCrab_10pContribution_2026-01-15.csv",
@@ -26,9 +38,11 @@ file_meta <- list(
 )
 
 myfisheries <- c('Salmon', 'Non-DTS groundfish', 'DTS groundfish')
+```
 
 ## --- Efficient Data Ingestion ---
 
+```{r}
 # Load Node Stats
 dat_long <- read_csv(here(indir, file_meta$nodes$file)) %>%
   select(pcgroup, year, metier.cm, all_of(names(file_meta$nodes$metrics))) %>%
@@ -42,7 +56,9 @@ dat2_long <- read_csv(here(indir, file_meta$network$file)) %>%
   rename(year = y) %>%
   pivot_longer(cols = all_of(names(file_meta$network$metrics)), names_to = "metric", values_to = "value") %>%
   mutate(metric = recode(metric, !!!file_meta$network$metrics))
+```
 
+```{r}
 # ESR Export Preparation
 dat_esr <- bind_rows(
   dat_long %>% mutate(metric = paste(metier.cm, metric)),
@@ -52,7 +68,9 @@ dat_esr <- bind_rows(
   rename(index = value, timeseries = pcgroup)
 
 write_csv(dat_esr, here(indir, paste0('FPN_metrics_FY2026_', Sys.Date(), ".csv")))
+```
 
+```{r}
 ## --- Streamlined Plotting Function ---
 
 # Define a single function to handle the repeated ggplot logic
@@ -94,3 +112,4 @@ plot_network_ts(
   filename = "Edge_Density_Time_Series",
   use_viridis = TRUE
 )
+```
