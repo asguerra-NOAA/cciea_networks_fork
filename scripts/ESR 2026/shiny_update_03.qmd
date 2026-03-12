@@ -47,14 +47,22 @@ myfisheries <- c('Salmon', 'Non-DTS groundfish', 'DTS groundfish')
 dat_long <- read_csv(here(indir, file_meta$nodes$file)) %>%
   select(pcgroup, year, metier.cm, all_of(names(file_meta$nodes$metrics))) %>%
   filter(metier.cm %in% myfisheries) %>%
-  pivot_longer(cols = all_of(names(file_meta$nodes$metrics)), names_to = "metric", values_to = "value") %>%
+  pivot_longer(
+    cols = all_of(names(file_meta$nodes$metrics)),
+    names_to = "metric",
+    values_to = "value"
+  ) %>%
   mutate(metric = recode(metric, !!!file_meta$nodes$metrics))
 
 # Load Network Stats
 dat2_long <- read_csv(here(indir, file_meta$network$file)) %>%
   select(pcgroup, y, all_of(names(file_meta$network$metrics))) %>%
   rename(year = y) %>%
-  pivot_longer(cols = all_of(names(file_meta$network$metrics)), names_to = "metric", values_to = "value") %>%
+  pivot_longer(
+    cols = all_of(names(file_meta$network$metrics)),
+    names_to = "metric",
+    values_to = "value"
+  ) %>%
   mutate(metric = recode(metric, !!!file_meta$network$metrics))
 ```
 
@@ -64,37 +72,72 @@ dat_esr <- bind_rows(
   dat_long %>% mutate(metric = paste(metier.cm, metric)),
   dat2_long
 ) %>%
-  filter(!pcgroup %in% c("Other Coastal Washington", "Unknown Ports", "Columbia River")) %>%
+  filter(
+    !pcgroup %in%
+      c("Other Coastal Washington", "Unknown Ports", "Columbia River")
+  ) %>%
   rename(index = value, timeseries = pcgroup)
 
-write_csv(dat_esr, here(indir, paste0('FPN_metrics_FY2026_', Sys.Date(), ".csv")))
+write_csv(
+  dat_esr,
+  here(indir, paste0('FPN_metrics_FY2026_', Sys.Date(), ".csv"))
+)
 ```
 
 ```{r}
+glimpse(dat_esr)
+```
+
 ## --- Streamlined Plotting Function ---
+```{r}
 
 # Define a single function to handle the repeated ggplot logic
-plot_network_ts <- function(data, title_prefix, y_lab, filename, use_viridis = FALSE) {
+plot_network_ts <- function(
+  data,
+  title_prefix,
+  y_lab,
+  filename,
+  use_viridis = FALSE
+) {
   p <- ggplot(data, aes(x = year, y = value, color = pcgroup)) +
-    geom_point(size = 2) + 
+    geom_point(size = 2) +
     geom_line() +
     facet_wrap(~pcgroup, labeller = label_wrap_gen(16)) +
     scale_x_continuous(breaks = seq(min(data$year), max(data$year), by = 4)) +
     labs(title = paste(title_prefix, "2004-2025"), x = "Year", y = y_lab) +
-    theme_bw() + 
-    theme(legend.position = "none", axis.text.x = element_text(angle = 90, vjust = 0.5))
+    theme_bw() +
+    theme(
+      legend.position = "none",
+      axis.text.x = element_text(angle = 90, vjust = 0.5)
+    )
 
-  if(use_viridis) {
+  if (use_viridis) {
     p <- p + scale_color_viridis_d()
   } else {
-    p <- p + scale_color_manual(values = pnw_palette("Starfish", length(unique(data$pcgroup))))
+    p <- p +
+      scale_color_manual(
+        values = pnw_palette("Starfish", length(unique(data$pcgroup)))
+      )
   }
-  
-  ggsave(here(pngdir, paste0(filename, ".png")), plot = p, width = 8.5, height = 7.5, dpi = 200)
+
+  ggsave(
+    here(pngdir, paste0(filename, ".png")),
+    plot = p,
+    width = 8.5,
+    height = 7.5,
+    dpi = 200
+  )
   return(p)
 }
 
 ## --- Generate Plots ---
+```
+
+## Generate Plots
+
+### Node strength 
+
+```{r}
 
 # Node Strength for Salmon
 plot_network_ts(
@@ -103,6 +146,73 @@ plot_network_ts(
   y_lab = "Node Strength",
   filename = "Node_Strength_Salmon"
 )
+
+# Node Strength for Non-DTS Groundfish
+plot_network_ts(
+  data = filter(
+    dat_long,
+    metric == "Node Strength",
+    metier.cm == "Non-DTS groundfish"
+  ),
+  title_prefix = "Node Strength of Non-DTS groundfish in FPN",
+  y_lab = "Node Strength",
+  filename = "Node_Strength_Non-DTS_Groundfish"
+)
+
+# Node Strength for DTS Groundfish
+plot_network_ts(
+  data = filter(
+    dat_long,
+    metric == "Node Strength",
+    metier.cm == "DTS groundfish"
+  ),
+  title_prefix = "Node Strength of DTS groundfish in FPN",
+  y_lab = "Node Strength",
+  filename = "Node_Strength_DTS_Groundfish"
+)
+
+```
+
+### Importance 
+
+```{r}
+
+# Node Strength for Salmon
+plot_network_ts(
+  data = filter(dat_long, metric == "Importance", metier.cm == "Salmon"),
+  title_prefix = "Importance of Salmon in FPN",
+  y_lab = "Importance",
+  filename = "Importance_Salmon"
+)
+
+# Node Strength for Non-DTS Groundfish
+plot_network_ts(
+  data = filter(
+    dat_long,
+    metric == "Importance",
+    metier.cm == "Non-DTS groundfish"
+  ),
+  title_prefix = "Importance of Non-DTS groundfish in FPN",
+  y_lab = "Importance",
+  filename = "Importance_Non-DTS_Groundfish"
+)
+
+# Node Strength for DTS Groundfish
+plot_network_ts(
+  data = filter(
+    dat_long,
+    metric == "Importance",
+    metier.cm == "DTS groundfish"
+  ),
+  title_prefix = "Importance of DTS groundfish in FPN",
+  y_lab = "Importance",
+  filename = "Importance_DTS_Groundfish"
+)
+
+```
+
+### Edge Density
+```{r}
 
 # Edge Density (Global Network Metric)
 plot_network_ts(
