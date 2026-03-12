@@ -3,88 +3,385 @@ title: "Tidy update: IOPAC-network-map-script-cciea"
 format: html
 ---
 
+```{r}
 ## --- Setup & Directories ---
 library(tidyverse)
 library(ggmap)
 library(cowplot)
 library(here)
 library(magick)
+```
 
+```{r}
 # Configuration
 thisyear <- 2025
 most_recent_igraph <- "2026-03-10"
 png_pattern <- paste0("2025_circular_compare_", most_recent_igraph)
 
-indir_ports <- 'data/networks/participation_vessel_ports/plots/comparable/2025 only/.'
-esr_dir     <- "/Users/ana.guerra/Documents/CONFIDENTIAL/Outputs/CCIEA Networks/Figures/"
-esr_output  <- TRUE 
+indir_ports <- 'data/networks/participation_vessel_ports/plots/comparable/2025 only'
+esr_dir <- "/Users/ana.guerra/Documents/CONFIDENTIAL/Outputs/CCIEA Networks/Figures/"
+esr_output <- TRUE
+```
 
 ## --- Efficient Image Loading ---
-
+```{r}
 # Get all matching files at once
-all_files <- list.files(here(indir_ports), pattern = png_pattern, full.names = TRUE)
+all_files <- list.files(
+  file.path(indir_ports),
+  pattern = png_pattern,
+  full.names = TRUE
+)
 
 # Define a mapping of short names to search patterns
 port_patterns <- c(
-  nwc = "North WA Coast", ps = "Puget Sound", wc = "(?<!North )WA Coast",
-  ast = "Astoria", tl = "Tillamook", nwp = "Newport", cb = "Coos Bay", 
-  brk = "Brookings", cr = "Columbia River", cc = "Crescent City", 
-  eu = "Eureka", fb = "Fort Bragg", bb = "Bodega Bay", sf = "San Francisco", 
-  mt = "Monterey", sd = "San Diego", sb = "Santa Barbara", la = "Los Angeles", 
+  nwc = "North WA Coast",
+  ps = "Puget Sound",
+  wc = "(?<!North )WA Coast",
+  ast = "Astoria",
+  tl = "Tillamook",
+  nwp = "Newport",
+  cb = "Coos Bay",
+  brk = "Brookings",
+  cr = "Columbia River",
+  cc = "Crescent City",
+  eu = "Eureka",
+  fb = "Fort Bragg",
+  bb = "Bodega Bay",
+  sf = "San Francisco",
+  mt = "Monterey",
+  sd = "San Diego",
+  sb = "Santa Barbara",
+  la = "Los Angeles",
   mb = "Morro Bay"
 )
+```
+
 
 # Load all images into a named list using functional programming
-# This replaces ~100 lines of repetitive img_xxx <- image_read() code
-imgs <- map(port_patterns, function(pat) {
-  match <- all_files[str_detect(all_files, regex(pat, perl = TRUE))]
-  if(length(match) > 0) image_read(match[1]) else NULL
-})
 
+```{r}
+# This replaces the failing block
+imgs <- purrr::map(port_patterns, function(pat) {
+  match <- all_files[stringr::str_detect(all_files, stringr::regex(pat))]
+
+  if (length(match) > 0) {
+    magick::image_read(match[1])
+  } else {
+    message(paste("Warning: No file found for port pattern:", pat))
+    NULL
+  }
+})
+```
+
+```{r}
+# Check for missing images
+missing_ports <- names(imgs)[purrr::map_lgl(imgs, is.null)]
+if (length(missing_ports) > 0) {
+  cat(
+    "The following ports failed to load:",
+    paste(missing_ports, collapse = ", ")
+  )
+}
+```
+
+
+```{r}
 # Load coordinate reference
 box <- read_csv(here('data', 'input', 'node_box_ref_esr2026.csv'))
+```
+
 
 ## --- Consolidated Mapping Logic ---
 
-base_map_iopac <- function(state, xlim = c(-130, -117), ylim = c(NA, NA)) {
-  states <- map_data("state") %>% filter(region %in% state)
-  ggplot(states, aes(long, lat, group = group)) +
-    geom_polygon(fill = "gray90", alpha = 0.5, color = "gray85") +
-    coord_map(xlim = xlim, ylim = ylim) +
-    theme_void()
-}
+```{r}
 
+poi <- c('Puget Sound', 'Newport', 'Crescent City', 'Eureka')
+
+
+# Just creates the base map for the specified states, nothing else
+
+base_map_iopac <- function(state, xlim = c(-130, -117), ylim = c(32, 49)) {
+  states <- map_data("state")
+  # Convert input to lowercase to match 'states$region'
+  west_coast <- subset(states, region %in% tolower(state))
+
+  if (nrow(west_coast) == 0) {
+    stop("No states found. Check state name spelling.")
+  }
+
+  base_map <- ggplot(data = west_coast) +
+    geom_polygon(
+      aes(x = long, y = lat, group = group),
+      fill = "gray90",
+      alpha = 0.5,
+      color = "gray85"
+    ) +
+    # Ensure coord_map is available (requires mapproj package)
+    coord_map(xlim = xlim, ylim = ylim) +
+    ggthemes::theme_map()
+
+  return(base_map)
+}
+```
+
+```{r}
 box_iopac <- function(basemap, region_code) {
+  # 'box' must be loaded in the global environment
   region_boxes <- box %>% filter(map_version == region_code)
-  
+
   basemap +
-    geom_point(data = region_boxes, aes(PRIMARY_LONGITUDE, PRIMARY_LATITUDE, fill = STATE), 
-               colour = "black", pch = 21, size = 2) +
-    ggrepel::geom_text_repel(data = region_boxes, aes(PRIMARY_LONGITUDE, PRIMARY_LATITUDE, label = IOPAC),
-                            size = 2.15, box.padding = 0) +
-    geom_rect(data = region_boxes, aes(xmax = xmax, ymax = ymax, xmin = xmin, ymin = ymin),
-              fill = NA, colour = "darkgray") +
-    # Combined segments logic using a helper long-format if necessary, 
-    # but keeping your logic simplified:
-    geom_segment(data = region_boxes, aes(x = PRIMARY_LONGITUDE, y = PRIMARY_LATITUDE, 
-                                          xend = xmax, yend = ymax), color = 'darkgray') +
+    geom_point(
+      data = region_boxes,
+      aes(PRIMARY_LONGITUDE, PRIMARY_LATITUDE, fill = STATE),
+      colour = "black",
+      pch = 21,
+      size = 2
+    ) +
+    ggrepel::geom_text_repel(
+      data = region_boxes,
+      aes(PRIMARY_LONGITUDE, PRIMARY_LATITUDE, label = IOPAC),
+      size = 2.15,
+      box.padding = 0.5 # Increased slightly to prevent overlap
+    ) +
+    geom_rect(
+      data = region_boxes,
+      aes(xmax = xmax, ymax = ymax, xmin = xmin, ymin = ymin),
+      fill = NA,
+      colour = "darkgray"
+    ) +
+    geom_segment(
+      data = region_boxes,
+      aes(
+        x = PRIMARY_LONGITUDE,
+        y = PRIMARY_LATITUDE,
+        xend = xmax,
+        yend = ymax
+      ),
+      color = 'darkgray'
+    ) +
+    # Ensure values match the number of unique states in your data
     scale_fill_manual(values = c('gray', 'black', 'white')) +
     theme(legend.position = "none")
 }
+```
+
+```{r}
+box_iopac2 <- function(basemap, region_code) {
+  # 'box' must be loaded in the global environment
+  region_boxes <- box %>% filter(map_version == region_code)
+
+  basemap +
+    geom_point(
+      data = region_boxes,
+      aes(PRIMARY_LONGITUDE, PRIMARY_LATITUDE, fill = STATE),
+      colour = "black",
+      pch = 21,
+      size = 2
+    ) +
+    ggrepel::geom_text_repel(
+      data = region_boxes,
+      aes(PRIMARY_LONGITUDE, PRIMARY_LATITUDE, label = IOPAC),
+      size = 2.15,
+      box.padding = 0.5 # Increased slightly to prevent overlap
+    ) +
+    # Ensure values match the number of unique states in your data
+    scale_fill_manual(values = c('gray', 'black', 'white')) +
+    theme(legend.position = "none")
+}
+```
 
 ## --- Generate and Save Coastwide Figure ---
 
-CW_map <- ggdraw(box_iopac(base_map_iopac(c("washington", "oregon", "california")), 'CW')) +
-  draw_image(imgs$ps,  x = .06, y = .66, width = 0.31, height = 0.31) +
-  draw_image(imgs$nwp, x = .08, y = .43, width = 0.31, height = 0.31) +
-  draw_image(imgs$cc,  x = .08, y = .18, width = 0.31, height = 0.31) +
-  draw_image(imgs$eu,  x = .27, y = .29, width = 0.31, height = 0.31)
 
-# Helper for saving
+```{r}
+draw_image_border <- function(
+  x,
+  y,
+  width,
+  height,
+  color = "darkgray",
+  size = 1
+) {
+  # Create a completely empty plot with only a border
+  border_plot <- ggplot() +
+    theme_void() +
+    theme(panel.border = element_rect(colour = color, fill = NA, size = size))
+
+  # Draw that "border-only" plot at the same location as your image
+  cowplot::draw_plot(border_plot, x = x, y = y, width = width, height = height)
+}
+
+```
+
+```{r}
+base_p <- box_iopac2(
+  base_map_iopac(c("washington", "oregon", "california")),
+  'CW'
+)
+
+CW_map <- cowplot::ggdraw() +
+
+  # 2. Draw the image at the EXACT same coordinates
+  # cowplot::draw_image(imgs$ps, x = .1, y = .66, width = 0.31, height = 0.31) +
+  cowplot::draw_image(imgs$ps) +
+  cowplot::draw_label(
+    "Puget Sound Inset",
+    x = 0.5,
+    y = 0.88,
+    fontface = 'bold',
+    size = 10
+  )
+
+CW_map
+```
+
+```{r}
+base_p <- box_iopac(
+  base_map_iopac(c("washington", "oregon", "california")),
+  'CW'
+)
+
+# 2. Use ggdraw to layer images and coordinate-matching rectangles
+CW_map <- cowplot::ggdraw(base_p) +
+  # --- Puget Sound ---
+  cowplot::draw_image(
+    imgs$ps,
+    x = get_coord("CW", "Puget Sound", "draw_x"),
+    y = get_coord("CW", "Puget Sound", "draw_y"),
+    width = 0.31,
+    height = 0.31
+  )
+
+CW_map
+
+```
+
+
+```{r}
+
+base_p <- box_iopac(
+  base_map_iopac(c("washington", "oregon", "california")),
+  'CW'
+)
+
+# 2. Use ggdraw to layer images and coordinate-matching rectangles
+cowplot::ggdraw(base_p) +
+  # --- Puget Sound ---
+  cowplot::draw_image(
+    imgs$ps,
+    x = get_coord("CW", "Puget Sound", "draw_x") + 0.22,
+    y = get_coord("CW", "Puget Sound", "draw_y") - 0.03,
+    width = 0.25,
+    height = 0.25
+  )
+
+
+```
+
+  ```{r}
+
+# --- Newport ---
+cowplot::draw_rect(
+  x = .08,
+  y = .43,
+  width = 0.31,
+  height = 0.31,
+  color = "darkgray",
+  fill = NA
+) +
+  cowplot::draw_image(imgs$nwp, x = .08, y = .43, width = 0.31, height = 0.31) +
+
+  # --- Crescent City ---
+  cowplot::draw_rect(
+    x = .08,
+    y = .18,
+    width = 0.31,
+    height = 0.31,
+    color = "darkgray",
+    fill = NA
+  ) +
+  cowplot::draw_image(imgs$cc, x = .08, y = .18, width = 0.31, height = 0.31) +
+
+  # --- Eureka ---
+  cowplot::draw_rect(
+    x = .27,
+    y = .29,
+    width = 0.31,
+    height = 0.31,
+    color = "darkgray",
+    fill = NA
+  ) +
+  cowplot::draw_image(imgs$eu, x = .27, y = .29, width = 0.31, height = 0.31)
+
+# Display the map
+CW_map
+
+`
+`
+`
+`
+``
+{
+  r
+}
+
+cw_region_boxes <- box %>% filter(map_version == 'CW')
+
+
+CW_map <- box_iopac2(
+  base_map_iopac(c("washington", "oregon", "california")),
+  'CW'
+) +
+  geom_rect(
+    data = cw_region_boxes,
+    aes(xmax = xmax, ymax = ymax, xmin = xmin, ymin = ymin),
+    fill = NA,
+    colour = "darkgray"
+  ) +
+  geom_segment(
+    data = cw_region_boxes,
+    aes(
+      x = PRIMARY_LONGITUDE,
+      y = PRIMARY_LATITUDE,
+      xend = xmax,
+      yend = ymax
+    ),
+    color = 'darkgray'
+  ) +
+  cowplot::draw_image(imgs$ps, x = .06, y = .66, width = 0.31, height = 0.31) +
+  cowplot::draw_image(imgs$nwp, x = .08, y = .43, width = 0.31, height = 0.31) +
+  cowplot::draw_image(imgs$cc, x = .08, y = .18, width = 0.31, height = 0.31) +
+  cowplot::draw_image(imgs$eu, x = .27, y = .29, width = 0.31, height = 0.31)
+
+```
+
+```{r}
+CW_map
+`
+`
+`
+`
+``
+{
+  r
+}
+# Improved save_map helper
 save_map <- function(p, name, w = 6, h = 10) {
-  local_path <- here(indir_ports, paste0(name, '_', thisyear, '.png'))
+  # Use file.path for cleaner cross-platform paths
+  local_path <- here::here(indir_ports, paste0(name, '_', thisyear, '.png'))
   ggsave(local_path, p, width = w, height = h, dpi = 600)
-  if(esr_output) ggsave(paste0(esr_dir, name, '-', thisyear, '.png'), p, width = w, height = h, dpi = 600)
+
+  if (exists("esr_output") && esr_output == TRUE) {
+    ggsave(
+      file.path(esr_dir, paste0(name, '-', thisyear, '.png')),
+      p,
+      width = w,
+      height = h,
+      dpi = 600
+    )
+  }
 }
 
 save_map(CW_map, "iopac-node_full-coast_rect_font")
+```
+
