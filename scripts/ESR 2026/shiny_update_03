@@ -1,0 +1,96 @@
+---
+title: "Compare Timeseries of Network Stats Across Port Groups and to Other ESR Indicators"
+format: html
+---
+
+## --- Setup & Directories ---
+library(tidyverse)
+library(here)
+library(PNWColors)
+library(viridis)
+
+indir  <- 'results/statistics'
+pngdir <- 'results/figures'
+other_indir <- 'data/input'
+
+# Define metadata for files
+file_meta <- list(
+  nodes = list(
+    file = "VesselLevelNodeStats_2004_2025_21pcgroups_totalrev7873.43337267464_indivrev787.343337267464_connectivity_rmCrab_10pContribution_2026-01-15.csv",
+    metrics = c(node_strength = "Node Strength", eigen = "Importance")
+  ),
+  network = list(
+    file = "VesselLevelNetworkStats_2004_2025_21pcgroups_totalrev7873.43337267464_indivrev787.343337267464_connectivity_rmCrab_10pContribution_2026-01-15.csv",
+    metrics = c(ed = "edge density", N = "number of fisheries")
+  )
+)
+
+myfisheries <- c('Salmon', 'Non-DTS groundfish', 'DTS groundfish')
+
+## --- Efficient Data Ingestion ---
+
+# Load Node Stats
+dat_long <- read_csv(here(indir, file_meta$nodes$file)) %>%
+  select(pcgroup, year, metier.cm, all_of(names(file_meta$nodes$metrics))) %>%
+  filter(metier.cm %in% myfisheries) %>%
+  pivot_longer(cols = all_of(names(file_meta$nodes$metrics)), names_to = "metric", values_to = "value") %>%
+  mutate(metric = recode(metric, !!!file_meta$nodes$metrics))
+
+# Load Network Stats
+dat2_long <- read_csv(here(indir, file_meta$network$file)) %>%
+  select(pcgroup, y, all_of(names(file_meta$network$metrics))) %>%
+  rename(year = y) %>%
+  pivot_longer(cols = all_of(names(file_meta$network$metrics)), names_to = "metric", values_to = "value") %>%
+  mutate(metric = recode(metric, !!!file_meta$network$metrics))
+
+# ESR Export Preparation
+dat_esr <- bind_rows(
+  dat_long %>% mutate(metric = paste(metier.cm, metric)),
+  dat2_long
+) %>%
+  filter(!pcgroup %in% c("Other Coastal Washington", "Unknown Ports", "Columbia River")) %>%
+  rename(index = value, timeseries = pcgroup)
+
+write_csv(dat_esr, here(indir, paste0('FPN_metrics_FY2026_', Sys.Date(), ".csv")))
+
+## --- Streamlined Plotting Function ---
+
+# Define a single function to handle the repeated ggplot logic
+plot_network_ts <- function(data, title_prefix, y_lab, filename, use_viridis = FALSE) {
+  p <- ggplot(data, aes(x = year, y = value, color = pcgroup)) +
+    geom_point(size = 2) + 
+    geom_line() +
+    facet_wrap(~pcgroup, labeller = label_wrap_gen(16)) +
+    scale_x_continuous(breaks = seq(min(data$year), max(data$year), by = 4)) +
+    labs(title = paste(title_prefix, "2004-2025"), x = "Year", y = y_lab) +
+    theme_bw() + 
+    theme(legend.position = "none", axis.text.x = element_text(angle = 90, vjust = 0.5))
+
+  if(use_viridis) {
+    p <- p + scale_color_viridis_d()
+  } else {
+    p <- p + scale_color_manual(values = pnw_palette("Starfish", length(unique(data$pcgroup))))
+  }
+  
+  ggsave(here(pngdir, paste0(filename, ".png")), plot = p, width = 8.5, height = 7.5, dpi = 200)
+  return(p)
+}
+
+## --- Generate Plots ---
+
+# Node Strength for Salmon
+plot_network_ts(
+  data = filter(dat_long, metric == "Node Strength", metier.cm == "Salmon"),
+  title_prefix = "Node Strength of Salmon in FPN",
+  y_lab = "Node Strength",
+  filename = "Node_Strength_Salmon"
+)
+
+# Edge Density (Global Network Metric)
+plot_network_ts(
+  data = filter(dat2_long, metric == "edge density"),
+  title_prefix = "Edge Density in FPN",
+  y_lab = "Edge Density",
+  filename = "Edge_Density_Time_Series",
+  use_viridis = TRUE
+)

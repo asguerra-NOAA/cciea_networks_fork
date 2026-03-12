@@ -535,8 +535,7 @@ png(here::here(pngdir, "Importance of Salmon in Fisheries Participation Networks
     res=200,height=1500,width=1700)
 figy_salmon
 dev.off()
-`
-``
+```
 <br>
 
 
@@ -589,8 +588,7 @@ dev.off()
 ```{r}
 plot_metric = "Edge Density"
 metric_label = "Edge Density"
-``
-`
+```
 <br>
 
 ```{r echo=FALSE, fig.width=10}
@@ -677,8 +675,7 @@ png(
 )
 fig_ed
 dev.off()
-``
-`
+```
 <br>
 
 ## Figure bb. Time series of number of nodes
@@ -690,8 +687,7 @@ dev.off()
 ```{r}
 plot_metric="N"
 metric_label="Number of fisheries"
-`
-``
+```
 <br>
 
 ```{r echo=FALSE, fig.width=10}
@@ -740,8 +736,7 @@ fig_n <- ggplot(
   ) +
   theme(legend.position = 'none')
 fig_n
-``
-`
+```
 <br>
 <br>
 <br>
@@ -752,8 +747,7 @@ png(here::here(pngdir, paste0("Number of Nodes in Fisheries Participation Networ
     res=200,height=1500,width=1700)
 fig_n
 dev.off()
-`
-``
+```
 <br>
 
 
