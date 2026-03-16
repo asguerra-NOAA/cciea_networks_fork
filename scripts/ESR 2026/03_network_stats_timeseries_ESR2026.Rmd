@@ -52,8 +52,7 @@ knitr::opts_knit$set(root.dir = here::here())
 
 ## start time for full script
 script_start_time <- Sys.time()
-``
-`
+```
 <br>
 
 This script requires the following packages. 
