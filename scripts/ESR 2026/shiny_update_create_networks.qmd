@@ -50,6 +50,7 @@ indir = '/Users/ana.guerra/Documents/CONFIDENTIAL/Outputs/CCIEA Networks'
 outdir_ports = 'data/networks/participation_vessel_ports/igraph_test'
 # outdir_states = 'data/networks/participation_vessel_states'
 
+
 ## output directory for network viz
 pngdir_ports = 'data/networks/participation_vessel_ports/plots_test'
 # pngdir_states = 'data/networks/participation_vessel_states/plots'
@@ -72,7 +73,7 @@ myfile5 <- "spgrpn2_iea_key.csv"
 most_recent_igraph <- '2026-03-10'
 
 
-years <- seq(2020, 2021)
+years <- seq(2004, 2025)
 
 ## IOPAC port groups
 myports <- c("Monterey", "Puget Sound") # testing script, 
@@ -138,7 +139,8 @@ fishtix$SPGRPN2 = as.character(fishtix$SPGRPN2)
 
 ```{r}
 node_names <- read_csv(here::here(processdir,myfile5),
-                       col_types = list(col_character(), col_character(), col_character()))
+                       col_types = list(col_character(), col_character(), col_character())) %>% 
+  rename(SPG_label = species_group_2_label2 )
 ```
 
 ```{r}
@@ -669,6 +671,21 @@ net_centr_weighted = function(g){
 
 ## Create networks
 
+
+```{r}
+
+ dat <- fishtix %>%
+      #filter(crab_year == 2008 & IOPAC == "Bodega Bay") # this line is just for running through for loop manually
+      filter(crab_year == 2020 & IOPAC == "Monterey") 
+
+
+ tmp_g <- participation_network_crabyear(
+      dat, 
+      filter = TRUE, filter_subgraph = FALSE,
+      edge_type="connectivity", pcid_choose=iopac, state_choose = NA, year_choose=y, min_vessels = vessel_cutoff, min_contribution = contr_cutoff, min_rev = total_rev_cutoff, min_rev_indiv = indiv_rev_cutoff,
+      write_out=FALSE)
+```
+
 ```{r eval=TRUE}
 
 
@@ -755,4 +772,153 @@ for(y in years){
 ### 
 # Tidy approach
 
+```{r}
+participation_network_tidy <- function(tickets, 
+                                       min_vessels = 3, 
+                                       min_contribution = 0.10, 
+                                       min_rev_total = 5000, 
+                                       min_rev_indiv = 500) {
+  
+  # 1. Clean and Filter Vessels
+  vessel_summary <- tickets %>%
+    filter(drvid != "NONE") %>%
+    group_by(drvid, crab_year, SPGRPN2) %>%
+    summarise(revenue = sum(adj_afi_revenue), .groups = "drop") %>%
+    # Filter: Vessel must meet minimum individual fishery revenue
+    filter(revenue >= min_rev_indiv) %>%
+    group_by(drvid, crab_year) %>%
+    # Filter: Vessel must meet total annual revenue
+    mutate(total_annual_rev = sum(revenue)) %>%
+    filter(total_annual_rev >= min_rev_total) %>%
+    # Calculate proportions for weighting
+    mutate(prop = revenue / total_annual_rev)
+  
+  # 2. Determine valid Fisheries (Nodes)
+  valid_fisheries <- vessel_summary %>%
+    group_by(SPGRPN2) %>%
+    summarise(
+      max_boats = n_distinct(drvid),
+      med_prop = median(prop),
+      .groups = "drop"
+    ) %>%
+    filter(max_boats >= min_vessels, med_prop >= min_contribution)
+  
+  # 3. Create Edges (Connectivity) using a Tidy Join
+  # This replaces the nested for-loops with a self-join
+  edges <- vessel_summary %>%
+    filter(SPGRPN2 %in% valid_fisheries$SPGRPN2) %>%
+    inner_join(vessel_summary, by = c("drvid", "crab_year"), suffix = c("_i", "_j")) %>%
+    filter(SPGRPN2_i < SPGRPN2_j) %>% # Removes self-loops and duplicates
+    mutate(weight = prop_i * prop_j * (revenue_i + revenue_j)) %>%
+    group_by(from = SPGRPN2_i, to = SPGRPN2_j) %>%
+    summarise(weight = sum(weight), .groups = "drop")
+  
+  # 4. Create Nodes with Attributes
+  nodes <- valid_fisheries %>%
+    rename(name = SPGRPN2) %>%
+    mutate(importance = max_boats * med_prop)
+  
+  # 5. Build the TidyGraph object
+  tbl_graph(nodes = nodes, edges = edges, directed = FALSE)
+}
+```
+
+```{r}
+
+yr <- 2008
+port <- "Monterey"
+
+tickets <- fishtix %>%
+      filter(crab_year == yr & IOPAC == port) # this line is just for running through for loop manually
+
+
+min_vessels <- 3 
+min_contribution <- 0.10
+min_rev_total <-  5000
+min_rev_indiv <-  500
+  
+ # Clean and Filter Vessels
+ vessel_rev <- tickets %>%
+    filter(drvid != 'NONE') %>%
+    group_by(drvid, crab_year, SPGRPN2) %>%
+    summarise(revenue = sum(adj_afi_revenue, na.rm = TRUE), .groups = "drop") %>%
+    filter(revenue >= min_rev_indiv)  %>% # Pre-filter individual revenue
+  group_by(drvid, crab_year) %>%
+  mutate(frac_rev = revenue / sum(revenue)) %>%
+  ungroup()
+   
+# Valid Nodes (Fisheries)
+nodes_df <- vessel_rev %>%
+    group_by(name = SPGRPN2) %>%
+    summarise(
+      n_boats = n_distinct(drvid),
+      total_rev = sum(revenue, na.rm = TRUE),
+      percent_size = median(frac_rev, na.rm = TRUE),
+      .groups = "drop"
+    ) %>%
+    # Apply your threshold filters here
+    filter(n_boats >= min_vessels) %>% 
+    mutate(importance = total_rev * percent_size)
+  
+  # Create Edges (Connectivity)
+edges_df <- vessel_rev %>%
+    # CRITICAL: Only keep revenue for nodes that passed the filter
+    filter(SPGRPN2 %in% nodes$name) %>%
+    group_by(drvid) %>%
+    mutate(frac_rev = revenue / sum(revenue)) %>%
+    inner_join(vessel_rev, by = c("drvid", "crab_year"), suffix = c(".x", ".y")) %>%
+    filter(SPGRPN2.x < SPGRPN2.y) %>% 
+    mutate(weight = frac_rev.x * frac_rev.y * (revenue.x + revenue.y)) %>%
+    group_by(from = SPGRPN2.x, to = SPGRPN2.y) %>%
+    summarise(weight = sum(weight), .groups = "drop") %>%
+    # Remove any NaN weights that might have slipped through
+    filter(!is.na(weight))
+
+
+  tg <- tbl_graph(nodes = nodes_df, edges = edges_df, directed = FALSE) 
+  
+  
+tg_clean <- tg  %>%
+    activate(nodes) %>%
+    left_join(
+    dat %>% 
+      group_by(SPGRPN2) %>% 
+      summarise(vessels = n_distinct(drvid), .groups = "drop"),
+    by = c("name" = "SPGRPN2")
+  ) %>%
+  left_join(node_names, by = c("name" = "SPGRPN2")) %>% 
+    mutate(
+      # Wrap long names for the circular layout
+      display_name = str_wrap(SPG_label, width = 8),
+      # Only show labels if there are vessels (prevents clutter)
+      display_name = if_else(vessels == 0, "", display_name),
+      # Create the (n) vessel count label
+      vessel_label = if_else(vessels > 0, paste0("(", vessels, ")"), ""),
+      p = port,
+      year = yr
+    )
+
+  # 2. Build the Plot
+ np <-  ggraph(tg_clean, layout = 'linear', circular = TRUE) +
+    # Draw edges: width represents 'connectivity' weight
+    geom_edge_link(aes(width = weight), alpha = 0.2, color = "gray70", show.legend = FALSE) +
+    # Draw nodes: size by importance, color by the 'colors' attribute you already set
+    geom_node_point(aes(size = importance), alpha = 0.9) +
+    # Fishery labels: 'repel' automatically prevents overlapping
+    geom_node_text(aes(label = display_name), repel = TRUE, size = 4, fontface = "bold") +
+    # Vessel labels: smaller text near the nodes
+    geom_node_text(aes(label = vessel_label), size = 3, color = "gray30", vjust = 2) +
+    # Styling
+    scale_edge_width(range = c(0.5, 3)) +
+    scale_size(range = c(3, 12)) +
+    theme_graph() +
+    theme(legend.position = "none") +
+    labs(title = paste(unique(V(tg)$p), unique(V(tg)$year)))+
+   theme(
+      legend.position = "none",
+      plot.title = element_text(hjust = 0.5, size = 16, face = "bold", color = "black")
+    )
+
+np
+```
 
