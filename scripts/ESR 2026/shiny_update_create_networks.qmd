@@ -774,6 +774,8 @@ for(y in years){
 
 # Tidy approach
 
+## functions
+
 ```{r}
 participation_network_tidy <- function(tickets, 
                                        min_vessels = 3, 
@@ -841,6 +843,132 @@ get_vertex_colors <- function(node_names) {
   )
 }
 ```
+
+STATS
+```{r}
+
+#' @param g igraph object
+#' @return numeric value
+#' @examples
+#' 
+#' @export
+beta_eff = function(g){
+  if(is.null(E(g)$weight)){
+    beta_eff = NA
+  }else{
+    beta_eff = mean(E(g)$weight) + var(E(g)$weight)/mean(E(g)$weight)
+  }
+  return(beta_eff)
+}
+
+net_centr = function(g){
+  deg = degree(g)
+  max_deg = max(deg)
+  denom = (vcount(g) - 2) * (vcount(g) - 1)
+  numer = 0
+  for(d in deg){
+    numer = numer + (max_deg - d)
+  }
+  return(numer/denom)
+}
+
+net_centr_weighted = function(g){
+  deg=strength(g)
+  max_deg=max(deg)
+  pos_deg = deg[which(deg >0)]
+  denom = ((vcount(g)-2)*(vcount(g)-1)) * mean(pos_deg)
+  numer=0
+  for(d in deg){
+    numer = numer + (max_deg - d)
+  }
+  return(numer/denom)
+}
+
+
+net_stats_tidy <- function(g, y, stats = "both") {
+  
+  # ---  Pre-calculations ---
+  # Basic properties used in multiple places
+  v_names <- V(g)$name
+  n_count <- vcount(g)
+  e_count <- ecount(g)
+  e_weights <- E(g)$weight
+  
+  # Normalized degree and relative strength
+  deg_norm <- degree(g, normalized = TRUE)
+  # Handle zero-edge case for strength sum to avoid NaN
+  total_weight <- if(e_count > 0) sum(e_weights, na.rm = TRUE) else 1
+  strength_rel <- strength(g) / total_weight
+
+  # --- 2. Node-Level Stats ---
+  if (stats %in% c("node", "both")) {
+    
+    # Handle betweenness weights (igraph treats weights as costs/distance)
+    if (e_count < 1) {
+      message("WARNING: No edges in this network.")
+      btwn <- NA; btwn_inv <- NA; btwn_basic <- betweenness(g, normalized = TRUE)
+    } else {
+      # mean(weight)/weight or 1/weight to convert strength to cost
+      btwn       <- betweenness(g, directed = FALSE, weights = mean(e_weights)/e_weights, normalized = TRUE)
+      btwn_inv   <- betweenness(g, directed = FALSE, weights = 1/e_weights, normalized = TRUE)
+      btwn_basic <- betweenness(g, directed = FALSE, weights = e_weights, normalized = TRUE)
+    }
+
+    node_stats <- tibble(
+      year           = y,
+      metier         = v_names,
+      # Extract gear (string after underscore)
+      gear           = str_split_fixed(v_names, "_", 2)[, 2],
+      common_name    = V(g)$SPG_label,
+      node_strength  = strength_rel,
+      eigen          = eigen_centrality(g, weights = e_weights)$vector,
+      btwn           = btwn,
+      btwn_inverted  = btwn_inv,
+      btwn_basic     = btwn_basic,
+      deg_norm       = deg_norm
+    )
+  }
+
+  # --- 3. Network-Level Stats ---
+  if (stats %in% c("network", "both")) {
+    
+    # Cluster-based stats (Modularity)
+    wtc        <- cluster_walktrap(g, weights = e_weights)
+    m          <- modularity(g, membership(wtc))
+    m_weighted <- modularity(g, membership(wtc), weights = e_weights)
+
+    net_summary <- tibble(
+      year           = y,
+      N              = n_count,
+      E              = e_count,
+      # Edge weight stats (handling E=0/1 cases)
+      avg_ew         = if(e_count > 0) mean(e_weights) else NA,
+      sd_ew          = if(e_count > 1) sd(e_weights)   else NA,
+      med_ew         = if(e_count > 0) median(e_weights) else NA,
+      max_ew         = if(e_count > 0) max(e_weights) else 0,
+      # Density and Centralization
+      assort         = assortativity_degree(g, directed = FALSE),
+      ed             = edge_density(g),
+      ld             = e_count / n_count,
+      mean_deg       = (2 * e_count) / n_count,
+      nc             = net_centr(g),
+      nc_weighted    = net_centr_weighted(g),
+      # Modularity
+      modularity     = m,
+      mod_weighted   = m_weighted,
+      beta_eff       = beta_eff(g)
+    )
+  }
+
+  # --- 4. Return Logic ---
+  if (stats == "node") return(node_stats)
+  if (stats == "network") return(net_summary)
+  
+  return(list(node = node_stats, network = net_summary))
+}
+```
+
+## create network
 
 ```{r}
 
@@ -914,9 +1042,27 @@ tg_clean <- tg  %>%
       display_name = if_else(vessels == 0, "", display_name),
       # Create the (n) vessel count label
       vessel_label = if_else(vessels > 0, paste0("(", vessels, ")"), ""),
-      p = port,
+      iopac = port,
       year = yr
     )
+
+```
+
+Get stats
+```{r}
+
+g_stats <- net_stats_tidy(tg_clean, y = y, stats = "both")
+
+node_results <- g_stats$node %>%
+        mutate(iopac = port)
+      
+network_results <- g_stats$network  %>%
+        mutate(iopac = port)
+
+print(node_results)
+print(network_results)
+      
+      
 ```
 
  Build the Plot
@@ -949,4 +1095,5 @@ tg_clean <- tg  %>%
 
 np
 ```
+
 
