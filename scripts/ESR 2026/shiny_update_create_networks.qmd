@@ -39,7 +39,7 @@ calls the following functions:
 ```
 <br>
 
-# User Inputs 
+
 
 Select your directories.
 ```{r}
@@ -104,9 +104,9 @@ ref_years <- c(2004,2005)
 ```
 
 
-# OLD APPROACH
 
 
+## Load fish tickets
 
 ```{r}
 for(y in years){
@@ -143,6 +143,8 @@ node_names <- read_csv(here::here(processdir,myfile5),
   rename(SPG_label = species_group_2_label2 )
 ```
 
+
+# OLD APPROACH
 ```{r}
 total_rev_cutoff <- 5000
 indiv_rev_cutoff <- 500
@@ -769,7 +771,7 @@ for(y in years){
 } #end (y in years)
 ```
 
-### 
+
 # Tidy approach
 
 ```{r}
@@ -824,6 +826,23 @@ participation_network_tidy <- function(tickets,
 ```
 
 ```{r}
+get_vertex_colors <- function(node_names) {
+  case_when(
+    node_names %in% c("1", "3", "19", "50", "55") ~ pal3[1],  # Groundfish
+    node_names == "2"                             ~ pal3[2],  # Whiting
+    node_names %in% c("20", "21")                 ~ pal3[3],  # Shrimp
+    node_names == "30"                            ~ pal3[4],  # Salmon
+    node_names == "35"                            ~ pal3[5],  # Tuna
+    node_names %in% c("40", "45")                 ~ pal3[6],  # Pelagics
+    node_names == "25"                            ~ pal3[7],  # Crab
+    node_names == "70"                            ~ pal3[8],  # Squid
+    node_names %in% c("60", "65")                 ~ pal3[10], # Shellfish
+    TRUE                                          ~ pal3[11]  # Default
+  )
+}
+```
+
+```{r}
 
 yr <- 2008
 port <- "Monterey"
@@ -858,12 +877,13 @@ nodes_df <- vessel_rev %>%
     ) %>%
     # Apply your threshold filters here
     filter(n_boats >= min_vessels) %>% 
-    mutate(importance = total_rev * percent_size)
+    mutate(importance = total_rev * percent_size,
+           colors = get_vertex_colors(name))
   
   # Create Edges (Connectivity)
 edges_df <- vessel_rev %>%
     # CRITICAL: Only keep revenue for nodes that passed the filter
-    filter(SPGRPN2 %in% nodes$name) %>%
+    filter(SPGRPN2 %in% nodes_df$name) %>%
     group_by(drvid) %>%
     mutate(frac_rev = revenue / sum(revenue)) %>%
     inner_join(vessel_rev, by = c("drvid", "crab_year"), suffix = c(".x", ".y")) %>%
@@ -881,7 +901,7 @@ edges_df <- vessel_rev %>%
 tg_clean <- tg  %>%
     activate(nodes) %>%
     left_join(
-    dat %>% 
+    tickets %>% 
       group_by(SPGRPN2) %>% 
       summarise(vessels = n_distinct(drvid), .groups = "drop"),
     by = c("name" = "SPGRPN2")
@@ -897,13 +917,20 @@ tg_clean <- tg  %>%
       p = port,
       year = yr
     )
+```
 
-  # 2. Build the Plot
+ Build the Plot
+ 
+```{r}
+
+
+
+
  np <-  ggraph(tg_clean, layout = 'linear', circular = TRUE) +
     # Draw edges: width represents 'connectivity' weight
     geom_edge_link(aes(width = weight), alpha = 0.2, color = "gray70", show.legend = FALSE) +
     # Draw nodes: size by importance, color by the 'colors' attribute you already set
-    geom_node_point(aes(size = importance), alpha = 0.9) +
+    geom_node_point(aes(size = importance, color = colors), alpha = 0.9) +
     # Fishery labels: 'repel' automatically prevents overlapping
     geom_node_text(aes(label = display_name), repel = TRUE, size = 4, fontface = "bold") +
     # Vessel labels: smaller text near the nodes
@@ -913,10 +940,11 @@ tg_clean <- tg  %>%
     scale_size(range = c(3, 12)) +
     theme_graph() +
     theme(legend.position = "none") +
-    labs(title = paste(unique(V(tg)$p), unique(V(tg)$year)))+
+    labs(
+      title = paste(unique(V(tg_clean)$p), unique(V(tg_clean)$year))
+      )+
    theme(
-      legend.position = "none",
-      plot.title = element_text(hjust = 0.5, size = 16, face = "bold", color = "black")
+      legend.position = "none"
     )
 
 np
